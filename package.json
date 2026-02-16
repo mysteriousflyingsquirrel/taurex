@@ -1,0 +1,16 @@
+{
+  "name": "taurex",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "firebase"
+  ],
+  "scripts": {
+    "dev:marketing": "npm run dev -w apps/marketing",
+    "dev:tenant": "npm run dev -w apps/tenant",
+    "dev:admin": "npm run dev -w apps/admin",
+    "build:marketing": "npm run build -w apps/marketing",
+    "build:tenant": "npm run build -w apps/tenant",
+    "build:admin": "npm run build -w apps/admin"
+  }
+}
