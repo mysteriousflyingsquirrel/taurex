@@ -94,3 +94,14 @@ export type Season = {
   color: string; // Hex, e.g. "#EF4444"
   dateRanges: SeasonDateRange[];
 };
+
+// Date formatting
+
+/** Format a YYYY-MM-DD date string as dd.mm.yyyy */
+export function formatDate(dateStr: string): string {
+  if (!dateStr) return "";
+  const parts = dateStr.split("-");
+  if (parts.length !== 3) return dateStr;
+  const [y, m, d] = parts;
+  return `${d}.${m}.${y}`;
+}

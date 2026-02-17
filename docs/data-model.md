@@ -111,7 +111,7 @@ Firebase Storage Root
 |---|---|
 | **Tenant scoping** | All apartment and season data lives under `tenants/{tenantId}/`. No domain data at root level. |
 | **Languages** | Tenant `languages` array determines which locales are available. EN is always present (default). Available: `en`, `de`, `fr`, `it`. |
-| **Base currency** | Tenant `baseCurrency` determines the currency for all prices (`priceDefault`, `prices`). Available: `CHF`, `EUR`, `USD`, `GBP`. Default: `CHF`. Guest-side currency conversion handled by the marketing app. |
+| **Base currency** | Tenant `baseCurrency` determines the currency for all prices (`priceDefault`, `prices`). Available: `CHF`, `EUR`, `USD`, `GBP`. Default: `CHF`. Guest-side currency conversion handled by the site app. |
 | **Apartment document ID** | Equals the `slug` field. Enables O(1) lookups. Immutable after creation. |
 | **Season document ID** | Format: `{year}-{slugified-name}`. E.g. "High season" for 2026 → `2026-high-season`. |
 | **Seasons are year-scoped** | Each season belongs to one year. Creating a season for 2026 does not affect 2027. Use "Copy from previous year" to clone. |

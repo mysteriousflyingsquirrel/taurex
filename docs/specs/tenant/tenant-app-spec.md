@@ -304,7 +304,7 @@ Read-only display: Tenant ID, Name, Slug.
 - Each card shows: symbol, label, code.
 - Changes autosave (1s debounce) via `updateTenant(tenantId, { baseCurrency })`.
 - All price labels in the tenant app update dynamically based on `baseCurrency` from context.
-- Note: Guest-side currency conversion (display-only, using exchange rates) is handled by the marketing app.
+- Note: Guest-side currency conversion (display-only, using exchange rates) is handled by the site app.
 
 ### Languages
 

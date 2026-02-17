@@ -121,7 +121,7 @@ Access is denied if:
 
 ---
 
-## 5. Public Booking Resolution (Marketing App)
+## 5. Public Booking Resolution (Site App)
 
 Public tenant pages are resolved by:
 
@@ -138,7 +138,7 @@ Conceptual rules (to be implemented):
 
 - **Tenant users** may only read/write `tenants/{their-tenantId}/...`
 - **Admin** (`admin: true` claim) may read/write all tenants
-- **Public read** access to `tenants/{tenantId}/apartments` for the marketing app (no auth required)
+- **Public read** access to `tenants/{tenantId}/apartments` for the site app (no auth required)
 - **Guests** have no direct Firestore access to private data
 
 Actual rules must enforce tenant isolation strictly.

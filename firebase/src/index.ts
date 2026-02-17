@@ -7,7 +7,7 @@ export { auth, signIn, signOut, onAuthChanged } from "./auth";
 export type { User } from "./auth";
 
 // Types
-export { AVAILABLE_LANGUAGES, AVAILABLE_CURRENCIES } from "./types";
+export { AVAILABLE_LANGUAGES, AVAILABLE_CURRENCIES, formatDate } from "./types";
 export type {
   LanguageCode,
   CurrencyCode,

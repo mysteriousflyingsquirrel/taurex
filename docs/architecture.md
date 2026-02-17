@@ -19,8 +19,8 @@ Taurex.one consists of three separate frontend applications and one shared backe
 
 ### Applications
 
-1. **Marketing & Public Booking** — https://taurex.one
-   - Marketing pages (landing, features, pricing, FAQ)
+1. **Site & Public Booking** — https://taurex.one
+   - Public pages (landing, features, pricing, FAQ)
    - Public tenant pages (`/{tenantSlug}`)
    - Public booking pages (`/{tenantSlug}/{apartmentSlug}`)
    - Support for tenant custom domains
@@ -47,7 +47,7 @@ Each application is deployed independently.
 
 | Type | Access | Auth |
 |---|---|---|
-| **Guest** | Public booking pages, marketing site | None |
+| **Guest** | Public booking pages, site | None |
 | **Tenant** | Own tenant data via app.taurex.one | Firebase Auth |
 | **Admin** | All tenants via admin.taurex.one | Firebase Auth + `admin: true` claim |
 
@@ -72,7 +72,7 @@ There are no additional roles.
 - Single root `package.json` with workspace scripts
 
 ### Dev Servers
-- Marketing: http://localhost:3000
+- Site: http://localhost:3000
 - Tenant: http://localhost:3001
 - Admin: http://localhost:3002
 
@@ -84,7 +84,7 @@ Monorepo managed with npm workspaces. Single GitHub repository.
 
 ```
 /apps
-  /marketing      → @taurex/marketing
+  /site           → @taurex/site
   /tenant         → @taurex/tenant
   /admin          → @taurex/admin
 /firebase         → @taurex/firebase (shared config, auth, services, types)
@@ -116,7 +116,7 @@ Each application:
 
 ## 7. Separation of Concerns
 
-**Marketing & Public Booking App:**
+**Site App:**
 - Public content and guest booking flows
 - Tenant-specific public pages
 - Custom domain handling
