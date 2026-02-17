@@ -1,8 +1,11 @@
 import { useCallback, useState, useEffect } from "react";
 import {
   updateTenant,
+  fetchApartments,
   AVAILABLE_LANGUAGES,
   AVAILABLE_CURRENCIES,
+  getEffectivePrice,
+  getMonthlyTotal,
   type LanguageCode,
   type CurrencyCode,
 } from "@taurex/firebase";
@@ -23,11 +26,18 @@ export default function Settings() {
     languages,
     baseCurrency,
   });
+  const [apartmentCount, setApartmentCount] = useState(0);
 
   // Sync when tenant data loads
   useEffect(() => {
     setSettings({ languages, baseCurrency });
   }, [languages, baseCurrency]);
+
+  // Fetch apartment count for billing display
+  useEffect(() => {
+    if (!tenantId) return;
+    fetchApartments(tenantId).then((apts) => setApartmentCount(apts.length));
+  }, [tenantId]);
 
   const handleSave = useCallback(
     async (data: SettingsData) => {
@@ -97,6 +107,34 @@ export default function Settings() {
             <p className="text-sm text-gray-900">{tenant?.slug}</p>
           </div>
         </div>
+      </div>
+
+      {/* Billing */}
+      <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
+        <h2 className="text-lg font-semibold text-gray-900">Billing</h2>
+        {tenant?.billing?.unlocked ? (
+          <div className="mt-3 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2">
+            <span className="h-2 w-2 rounded-full bg-green-500" />
+            <span className="text-sm font-medium text-green-700">
+              Your account has full access — no charges apply.
+            </span>
+          </div>
+        ) : (
+          <div className="mt-3">
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-bold text-gray-900">
+                CHF {getEffectivePrice(tenant?.billing)}
+              </span>
+              <span className="text-sm text-gray-500">
+                / apartment / month
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-gray-600">
+              {apartmentCount} apartment{apartmentCount !== 1 ? "s" : ""} · CHF{" "}
+              {getMonthlyTotal(tenant?.billing, apartmentCount)} / month total
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Base Currency */}

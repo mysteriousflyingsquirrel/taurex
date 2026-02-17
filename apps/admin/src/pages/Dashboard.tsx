@@ -4,42 +4,62 @@ import {
   fetchTenants,
   fetchApartments,
   fetchAllUsers,
+  getMonthlyTotal,
+  getEffectivePrice,
   type Tenant,
 } from "@taurex/firebase";
 
 export default function Dashboard() {
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [aptCounts, setAptCounts] = useState<Record<string, number>>({});
   const [tenantCount, setTenantCount] = useState<number | null>(null);
   const [apartmentCount, setApartmentCount] = useState<number | null>(null);
   const [userCount, setUserCount] = useState<number | null>(null);
-  const [recentTenants, setRecentTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([fetchTenants(), fetchAllUsers()])
-      .then(async ([tenants, users]) => {
-        setTenantCount(tenants.length);
+      .then(async ([tenantList, users]) => {
+        setTenants(tenantList);
+        setTenantCount(tenantList.length);
         setUserCount(users.length);
-        setRecentTenants(tenants.slice(0, 5));
 
-        // Count all apartments across tenants
+        const counts: Record<string, number> = {};
         let totalApts = 0;
         await Promise.all(
-          tenants.map(async (t) => {
+          tenantList.map(async (t) => {
             const apts = await fetchApartments(t.id);
+            counts[t.id] = apts.length;
             totalApts += apts.length;
           })
         );
+        setAptCounts(counts);
         setApartmentCount(totalApts);
         setLoading(false);
       })
       .catch((err) => {
         console.error("Dashboard load error:", err);
-        setError("Failed to load dashboard data. Check Firestore rules and admin claim.");
+        setError(
+          "Failed to load dashboard data. Check Firestore rules and admin claim."
+        );
         setLoading(false);
       });
   }, []);
+
+  const monthlyRevenue = tenants.reduce((sum, t) => {
+    const count = aptCounts[t.id] ?? 0;
+    return sum + getMonthlyTotal(t.billing, count);
+  }, 0);
+
+  const payingTenants = tenants.filter(
+    (t) => !t.billing?.unlocked && (aptCounts[t.id] ?? 0) > 0
+  ).length;
+  const unlockedTenants = tenants.filter(
+    (t) => !!t.billing?.unlocked
+  ).length;
+
+  const recentTenants = tenants.slice(0, 5);
 
   return (
     <div>
@@ -55,7 +75,7 @@ export default function Dashboard() {
       )}
 
       {/* Stats */}
-      <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <Link
           to="/tenants"
           className="rounded-2xl border border-gray-200 bg-white p-6 transition hover:border-amber-200 hover:shadow-sm"
@@ -85,6 +105,22 @@ export default function Dashboard() {
             {loading ? "…" : userCount}
           </p>
         </Link>
+        <Link
+          to="/tenants"
+          className="rounded-2xl border border-green-200 bg-green-50 p-6 transition hover:border-green-300 hover:shadow-sm"
+        >
+          <p className="text-sm font-medium text-green-700">
+            Monthly Revenue
+          </p>
+          <p className="mt-2 text-3xl font-bold text-green-800">
+            {loading ? "…" : `CHF ${monthlyRevenue}`}
+          </p>
+          {!loading && (
+            <p className="mt-1 text-xs text-green-600">
+              {payingTenants} paying · {unlockedTenants} unlocked
+            </p>
+          )}
+        </Link>
       </div>
 
       {/* Recent Tenants */}
@@ -102,31 +138,40 @@ export default function Dashboard() {
             </Link>
           </div>
           <div className="mt-4 divide-y divide-gray-100">
-            {recentTenants.map((t) => (
-              <Link
-                key={t.id}
-                to={`/tenants/${t.id}`}
-                className="flex items-center justify-between py-3 text-sm hover:bg-gray-50 -mx-2 px-2 rounded-lg"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="font-medium text-gray-900">{t.name}</span>
-                  <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
-                    {t.slug}
-                  </code>
-                </div>
-                <div className="flex items-center gap-2">
-                  {t.languages.map((lang) => (
-                    <span
-                      key={lang}
-                      className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500"
-                    >
-                      {lang.toUpperCase()}
+            {recentTenants.map((t) => {
+              const count = aptCounts[t.id] ?? 0;
+              const isUnlocked = !!t.billing?.unlocked;
+              const total = getMonthlyTotal(t.billing, count);
+
+              return (
+                <Link
+                  key={t.id}
+                  to={`/tenants/${t.id}`}
+                  className="-mx-2 flex items-center justify-between rounded-lg px-2 py-3 text-sm hover:bg-gray-50"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium text-gray-900">{t.name}</span>
+                    <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
+                      {t.slug}
+                    </code>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-xs text-gray-500">
+                      {count} apt{count !== 1 ? "s" : ""}
                     </span>
-                  ))}
-                  <span className="text-gray-400">{t.baseCurrency}</span>
-                </div>
-              </Link>
-            ))}
+                    {isUnlocked ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
+                        Unlocked
+                      </span>
+                    ) : (
+                      <span className="text-sm font-medium text-gray-900">
+                        CHF {total}/mo
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}

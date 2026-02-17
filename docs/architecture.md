@@ -34,7 +34,7 @@ Taurex.one consists of three separate frontend applications and one shared backe
    - Requires authentication
 
 3. **Admin Dashboard** — https://admin.taurex.one
-   - Tenant overview
+   - Tenant overview and billing management
    - Platform configuration
    - System monitoring
    - Requires admin privileges
@@ -136,7 +136,41 @@ All applications communicate only with Firebase.
 
 ---
 
-## 8. Design Principles
+## 8. Admin Tenant Management
+
+The admin can view and edit any tenant's full configuration directly from the admin dashboard.
+
+| Route | Mode | Description |
+|-------|------|-------------|
+| `/tenants/:id` | View | Read-only view of settings, billing, apartments |
+| `/tenants/:id/edit` | Edit | Security gate → full edit access |
+| `/tenants/:id/edit/apartments/:slug` | Edit | Apartment editor for tenant |
+
+Edit mode requires typing a confirmation string (`edit tenant {slug}`) before any changes can be made. A persistent amber banner indicates active edit mode.
+
+See [docs/admin-tenant-management.md](admin-tenant-management.md) for full specification.
+
+---
+
+## 9. Billing Model
+
+No feature tiers. No gating. Every tenant gets full access to all features.
+
+Pricing is per apartment per month (standard rate: CHF 5).
+
+| Billing State | Description |
+|---------------|-------------|
+| Unlocked | No charge (admin, demos) |
+| Discounted | Custom rate per apartment (friends) |
+| Standard | Default rate per apartment |
+
+Managed by admin via Tenant Detail → Billing tab.
+
+See [docs/billing.md](billing.md) for full specification.
+
+---
+
+## 10. Design Principles
 
 - Keep infrastructure minimal
 - Prefer managed services

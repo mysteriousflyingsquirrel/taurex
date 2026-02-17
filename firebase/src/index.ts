@@ -7,10 +7,19 @@ export { auth, signIn, signOut, onAuthChanged } from "./auth";
 export type { User } from "./auth";
 
 // Types
-export { AVAILABLE_LANGUAGES, AVAILABLE_CURRENCIES, formatDate } from "./types";
+export {
+  AVAILABLE_LANGUAGES,
+  AVAILABLE_CURRENCIES,
+  STANDARD_PRICE_PER_APARTMENT,
+  DEFAULT_BILLING,
+  getEffectivePrice,
+  getMonthlyTotal,
+  formatDate,
+} from "./types";
 export type {
   LanguageCode,
   CurrencyCode,
+  TenantBilling,
   Tenant,
   UserProfile,
   Apartment,

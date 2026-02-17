@@ -20,12 +20,44 @@ export type CurrencyCode = (typeof AVAILABLE_CURRENCIES)[number]["code"];
 
 // Tenant & User (top-level collections)
 
+// Billing
+
+/** Standard price per apartment per month (CHF) */
+export const STANDARD_PRICE_PER_APARTMENT = 5;
+
+export type TenantBilling = {
+  unlocked: boolean; // true = no charge at all (admin, demos)
+  pricePerApartment: number | null; // custom rate override, null = standard rate
+};
+
+export const DEFAULT_BILLING: TenantBilling = {
+  unlocked: false,
+  pricePerApartment: null,
+};
+
+/** Returns the effective price per apartment for a tenant */
+export function getEffectivePrice(billing?: TenantBilling): number {
+  if (!billing || billing.unlocked) return 0;
+  return billing.pricePerApartment ?? STANDARD_PRICE_PER_APARTMENT;
+}
+
+/** Returns the monthly total for a tenant */
+export function getMonthlyTotal(
+  billing: TenantBilling | undefined,
+  apartmentCount: number,
+): number {
+  return getEffectivePrice(billing) * apartmentCount;
+}
+
+// Tenant
+
 export type Tenant = {
   id: string;
   name: string;
   slug: string;
   languages: LanguageCode[]; // e.g. ["en", "de"], default ["en"]
   baseCurrency: CurrencyCode; // e.g. "CHF", default "CHF"
+  billing?: TenantBilling;
 };
 
 export type UserProfile = {

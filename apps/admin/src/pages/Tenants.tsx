@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import {
   fetchTenants,
   fetchApartments,
+  getEffectivePrice,
+  getMonthlyTotal,
   type Tenant,
 } from "@taurex/firebase";
 
@@ -17,7 +19,6 @@ export default function Tenants() {
     fetchTenants()
       .then(async (list) => {
         setTenants(list);
-        // Fetch apartment counts per tenant
         const counts: Record<string, number> = {};
         await Promise.all(
           list.map(async (t) => {
@@ -30,7 +31,9 @@ export default function Tenants() {
       })
       .catch((err) => {
         console.error("Tenants load error:", err);
-        setError("Failed to load tenants. Check Firestore rules and admin claim.");
+        setError(
+          "Failed to load tenants. Check Firestore rules and admin claim."
+        );
         setLoading(false);
       });
   }, []);
@@ -40,6 +43,11 @@ export default function Tenants() {
       t.name.toLowerCase().includes(search.toLowerCase()) ||
       t.slug.toLowerCase().includes(search.toLowerCase())
   );
+
+  const platformTotal = filtered.reduce((sum, t) => {
+    const count = aptCounts[t.id] ?? 0;
+    return sum + getMonthlyTotal(t.billing, count);
+  }, 0);
 
   return (
     <div>
@@ -83,77 +91,132 @@ export default function Tenants() {
           {search ? "No tenants match your search." : "No tenants yet."}
         </p>
       ) : (
-        <div className="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="px-6 py-3 font-medium text-gray-500">Name</th>
-                <th className="px-6 py-3 font-medium text-gray-500">Slug</th>
-                <th className="px-6 py-3 font-medium text-gray-500">
-                  Languages
-                </th>
-                <th className="px-6 py-3 font-medium text-gray-500">
-                  Currency
-                </th>
-                <th className="px-6 py-3 font-medium text-gray-500">
-                  Apartments
-                </th>
-                <th className="px-6 py-3 font-medium text-gray-500">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filtered.map((tenant) => (
-                <tr key={tenant.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-900">
-                    {tenant.name}
-                  </td>
-                  <td className="px-6 py-4">
-                    <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
-                      {tenant.slug}
-                    </code>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      {tenant.languages.map((lang) => (
-                        <span
-                          key={lang}
-                          className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600"
-                        >
-                          {lang.toUpperCase()}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {tenant.baseCurrency}
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {aptCounts[tenant.id] ?? "…"}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <Link
-                        to={`/tenants/${tenant.id}`}
-                        className="text-sm font-medium text-amber-600 hover:text-amber-700"
-                      >
-                        View
-                      </Link>
-                      <Link
-                        to={`/tenants/${tenant.id}/edit`}
-                        className="text-sm font-medium text-gray-500 hover:text-gray-700"
-                      >
-                        Edit
-                      </Link>
-                    </div>
-                  </td>
+        <>
+          <div className="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50">
+                  <th className="px-6 py-3 font-medium text-gray-500">Name</th>
+                  <th className="px-6 py-3 font-medium text-gray-500">Slug</th>
+                  <th className="px-6 py-3 text-right font-medium text-gray-500">
+                    Apartments
+                  </th>
+                  <th className="px-6 py-3 text-right font-medium text-gray-500">
+                    Rate
+                  </th>
+                  <th className="px-6 py-3 text-right font-medium text-gray-500">
+                    Monthly Total
+                  </th>
+                  <th className="px-6 py-3 font-medium text-gray-500">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 font-medium text-gray-500">
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filtered.map((tenant) => {
+                  const count = aptCounts[tenant.id] ?? 0;
+                  const isUnlocked = !!tenant.billing?.unlocked;
+                  const rate = getEffectivePrice(tenant.billing);
+                  const total = getMonthlyTotal(tenant.billing, count);
+
+                  return (
+                    <tr key={tenant.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 font-medium text-gray-900">
+                        {tenant.name}
+                      </td>
+                      <td className="px-6 py-4">
+                        <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">
+                          {tenant.slug}
+                        </code>
+                      </td>
+                      <td className="px-6 py-4 text-right text-gray-600">
+                        {aptCounts[tenant.id] ?? "…"}
+                      </td>
+                      <td className="px-6 py-4 text-right text-gray-600">
+                        {isUnlocked ? (
+                          <span className="text-green-600">Free</span>
+                        ) : (
+                          `CHF ${rate}`
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-right font-medium text-gray-900">
+                        {isUnlocked ? (
+                          <span className="text-green-600">Free</span>
+                        ) : (
+                          `CHF ${total}`
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <StatusBadge tenant={tenant} />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            to={`/tenants/${tenant.id}`}
+                            className="text-sm font-medium text-amber-600 hover:text-amber-700"
+                          >
+                            View
+                          </Link>
+                          <Link
+                            to={`/tenants/${tenant.id}/edit`}
+                            className="text-sm font-medium text-gray-500 hover:text-gray-700"
+                          >
+                            Edit
+                          </Link>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Footer total */}
+          <div className="mt-3 flex items-center justify-end gap-4 px-6 text-sm">
+            <span className="text-gray-500">
+              {filtered.length} tenant{filtered.length !== 1 ? "s" : ""}
+            </span>
+            <span className="font-semibold text-gray-900">
+              Total: CHF {platformTotal} / month
+            </span>
+          </div>
+        </>
       )}
     </div>
+  );
+}
+
+function StatusBadge({ tenant }: { tenant: Tenant }) {
+  const billing = tenant.billing;
+
+  if (billing?.unlocked) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700">
+        <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+        Unlocked
+      </span>
+    );
+  }
+
+  if (
+    billing?.pricePerApartment !== null &&
+    billing?.pricePerApartment !== undefined
+  ) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">
+        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+        Discounted
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2.5 py-0.5 text-xs font-medium text-gray-500">
+      Standard
+    </span>
   );
 }
