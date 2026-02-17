@@ -26,7 +26,9 @@ export type {
 // Services
 export {
   fetchUserProfile,
+  fetchAllUsers,
   createUserProfile,
+  deleteUserProfile,
 } from "./services/userService";
 
 export {

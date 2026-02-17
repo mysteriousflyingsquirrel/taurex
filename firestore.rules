@@ -1,0 +1,59 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helpers ───────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
+
+    function isTenantOwner(tenantId) {
+      return isSignedIn()
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tenantId == tenantId;
+    }
+
+    // ─── Users collection ──────────────────────────────────
+    match /users/{uid} {
+      // Users can read their own profile; admins can read all
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
+      // Only admins can create/update/delete user profiles
+      allow write: if isAdmin();
+    }
+
+    // ─── Tenants collection ────────────────────────────────
+    match /tenants/{tenantId} {
+      // Public read (site app needs this for tenant resolution)
+      allow read: if true;
+      // Only admins can create/update/delete tenants
+      allow write: if isAdmin();
+
+      // ─── Apartments subcollection ──────────────────────
+      match /apartments/{apartmentId} {
+        // Public read (site app needs this for apartment listing/detail)
+        allow read: if true;
+        // Tenant owner or admin can write
+        allow write: if isAdmin() || isTenantOwner(tenantId);
+      }
+
+      // ─── Seasons subcollection ─────────────────────────
+      match /seasons/{seasonId} {
+        // Public read (site app needs this for pricing display)
+        allow read: if true;
+        // Tenant owner or admin can write
+        allow write: if isAdmin() || isTenantOwner(tenantId);
+      }
+
+      // ─── Catch-all for future subcollections ───────────
+      match /{subcollection}/{docId} {
+        allow read: if isAdmin() || isTenantOwner(tenantId);
+        allow write: if isAdmin() || isTenantOwner(tenantId);
+      }
+    }
+  }
+}
