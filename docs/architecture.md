@@ -15,29 +15,37 @@ The goal is to:
 
 ## 2. System Structure
 
-Taurex.one consists of three separate frontend applications and one shared backend.
+Taurex.one consists of four separate frontend applications and one shared backend.
 
 ### Applications
 
-1. **Site & Public Booking** — https://taurex.one
-   - Public pages (landing, features, pricing, FAQ)
-   - Public tenant pages (`/{tenantSlug}`)
-   - Public booking pages (`/{tenantSlug}/{apartmentSlug}`)
-   - Support for tenant custom domains
+1. **Onboarding** — https://taurex.one
+   - Marketing pages (landing, features, pricing, FAQ)
+   - Onboarding flows
    - No authentication required
+   - **Tech: Next.js** (SEO important)
 
-2. **Tenant Dashboard** — https://app.taurex.one
+2. **Booking** — https://booking.taurex.one
+   - Public host pages (`/{hostSlug}`)
+   - Public booking pages (`/{hostSlug}/{apartmentSlug}`)
+   - Support for host custom domains
+   - No authentication required
+   - **Tech: Next.js** (SEO important)
+
+3. **Host Dashboard** — https://host.taurex.one
    - Login
-   - Tenant dashboard
+   - Host dashboard
    - Apartment and calendar management
-   - Tenant settings (including custom domain configuration)
+   - Host settings (including custom domain configuration)
    - Requires authentication
+   - **Tech: Vite + React SPA**
 
-3. **Admin Dashboard** — https://admin.taurex.one
-   - Tenant overview and billing management
+4. **Apex Dashboard** — https://apex.taurex.one
+   - Host overview and billing management
    - Platform configuration
    - System monitoring
-   - Requires admin privileges
+   - Requires apex privileges
+   - **Tech: Vite + React SPA**
 
 Each application is deployed independently.
 
@@ -47,9 +55,9 @@ Each application is deployed independently.
 
 | Type | Access | Auth |
 |---|---|---|
-| **Guest** | Public booking pages, site | None |
-| **Tenant** | Own tenant data via app.taurex.one | Firebase Auth |
-| **Admin** | All tenants via admin.taurex.one | Firebase Auth + `admin: true` claim |
+| **Guest** | Public booking pages, onboarding site | None |
+| **Host** | Own host data via host.taurex.one | Firebase Auth |
+| **Apex** | All hosts via apex.taurex.one | Firebase Auth + `admin: true` claim |
 
 There are no additional roles.
 
@@ -60,9 +68,12 @@ There are no additional roles.
 ### Frontend
 - React 19
 - TypeScript
-- Vite 6 (all three apps are SPAs)
-- Tailwind CSS v4 (via `@tailwindcss/vite` plugin)
-- React Router DOM
+- Onboarding + Booking: **Next.js 15** (App Router, SSR/SSG for SEO)
+- Host + Apex: **Vite 6** (SPAs, SEO irrelevant)
+- Tailwind CSS v4
+  - Vite apps: via `@tailwindcss/vite` plugin
+  - Next.js apps: via `@tailwindcss/postcss`
+- React Router DOM (Vite apps only)
 
 ### Backend
 - Firebase (Auth, Firestore, Cloud Functions, Storage)
@@ -72,9 +83,10 @@ There are no additional roles.
 - Single root `package.json` with workspace scripts
 
 ### Dev Servers
-- Site: http://localhost:3000
-- Tenant: http://localhost:3001
-- Admin: http://localhost:3002
+- Onboarding (Next.js): http://localhost:3000
+- Host (Vite): http://localhost:3001
+- Apex (Vite): http://localhost:3002
+- Booking (Next.js): http://localhost:3003
 
 ---
 
@@ -84,10 +96,12 @@ Monorepo managed with npm workspaces. Single GitHub repository.
 
 ```
 /apps
-  /site           → @taurex/site
-  /tenant         → @taurex/tenant
-  /admin          → @taurex/admin
-/firebase         → @taurex/firebase (shared config, auth, services, types)
+  /onboarding     → @taurex/onboarding (Next.js)
+  /booking        → @taurex/booking (Next.js)
+  /host           → @taurex/host (Vite SPA)
+  /apex           → @taurex/apex (Vite SPA)
+/packages
+  /firebase       → @taurex/firebase (shared config, auth, services, types)
 /docs
 ```
 
@@ -95,9 +109,15 @@ All applications share:
 - Firebase configuration via `@taurex/firebase` workspace package
 - Base TypeScript configuration (`tsconfig.base.json`)
 
+### Firebase Initialization
+
+The `@taurex/firebase` package exports an `initFirebase(config)` function. Each app initializes Firebase with its own environment variables:
+- Vite apps: `import.meta.env.VITE_*`
+- Next.js apps: `process.env.NEXT_PUBLIC_*`
+
 Each application:
-- Has its own Vite configuration
-- Has its own build process (`tsc` + `vite build`)
+- Has its own build configuration (Vite or Next.js)
+- Has its own build process
 - Is deployed separately on Vercel
 
 ---
@@ -116,55 +136,60 @@ Each application:
 
 ## 7. Separation of Concerns
 
-**Site App:**
-- Public content and guest booking flows
-- Tenant-specific public pages
+**Onboarding App:**
+- Marketing content and onboarding flows
+- Links to Host Dashboard for sign-in/registration
+- No Firebase dependency
+
+**Booking App:**
+- Guest-facing host pages and booking flows
+- Host-specific public pages
 - Custom domain handling
 - No private dashboard functionality
 
-**Tenant App:**
-- Authenticated tenant dashboard
-- Tenant-scoped management
-- No cross-tenant visibility
+**Host App:**
+- Authenticated host dashboard
+- Host-scoped management
+- No cross-host visibility
 - No platform-wide control
 
-**Admin App:**
+**Apex App:**
 - Platform-wide visibility and configuration
-- Tenant management and monitoring
+- Host management and monitoring
 
 All applications communicate only with Firebase.
 
 ---
 
-## 8. Admin Tenant Management
+## 8. Apex Host Management
 
-The admin can view and edit any tenant's full configuration directly from the admin dashboard.
+The apex user can view and edit any host's full configuration directly from the apex dashboard.
 
 | Route | Mode | Description |
 |-------|------|-------------|
-| `/tenants/:id` | View | Read-only view of settings, billing, apartments |
-| `/tenants/:id/edit` | Edit | Security gate → full edit access |
-| `/tenants/:id/edit/apartments/:slug` | Edit | Apartment editor for tenant |
+| `/hosts/:id` | View | Read-only view of settings, billing, apartments |
+| `/hosts/:id/edit` | Edit | Security gate → full edit access |
+| `/hosts/:id/edit/apartments/:slug` | Edit | Apartment editor for host |
 
-Edit mode requires typing a confirmation string (`edit tenant {slug}`) before any changes can be made. A persistent amber banner indicates active edit mode.
+Edit mode requires typing a confirmation string (`edit host {slug}`) before any changes can be made. A persistent amber banner indicates active edit mode.
 
-See [docs/admin-tenant-management.md](admin-tenant-management.md) for full specification.
+See [docs/apex-host-management.md](apex-host-management.md) for full specification.
 
 ---
 
 ## 9. Billing Model
 
-No feature tiers. No gating. Every tenant gets full access to all features.
+No feature tiers. No gating. Every host gets full access to all features.
 
 Pricing is per apartment per month (standard rate: CHF 5).
 
 | Billing State | Description |
 |---------------|-------------|
-| Unlocked | No charge (admin, demos) |
+| Unlocked | No charge (apex, demos) |
 | Discounted | Custom rate per apartment (friends) |
 | Standard | Default rate per apartment |
 
-Managed by admin via Tenant Detail → Billing tab.
+Managed by apex via Host Detail → Billing tab.
 
 See [docs/billing.md](billing.md) for full specification.
 

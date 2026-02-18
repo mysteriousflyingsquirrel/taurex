@@ -1,0 +1,18 @@
+{
+  "name": "@taurex/firebase",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "set-apex": "tsx scripts/set-apex-claim.ts"
+  },
+  "dependencies": {
+    "firebase": "^11.0.0"
+  },
+  "devDependencies": {
+    "firebase-admin": "^13.0.0",
+    "tsx": "^4.0.0"
+  }
+}

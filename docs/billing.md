@@ -2,9 +2,9 @@
 
 ## 1. Principle
 
-No feature tiers. No gating. Every tenant gets full access to all features.
+No feature tiers. No gating. Every host gets full access to all features.
 
-Billing is purely based on the number of apartments a tenant has.
+Billing is purely based on the number of apartments a host has.
 
 The platform must be so simple that anyone can use it.
 
@@ -12,7 +12,7 @@ The platform must be so simple that anyone can use it.
 
 ## 2. Billing Model
 
-Each tenant pays a flat rate per apartment per month.
+Each host pays a flat rate per apartment per month.
 
 The standard rate is defined once as a platform-wide constant.
 
@@ -20,7 +20,7 @@ The standard rate is defined once as a platform-wide constant.
 
 | State | Description | Price |
 |-------|-------------|-------|
-| **Unlocked** | No charge at all (admin, demos) | CHF 0 |
+| **Unlocked** | No charge at all (apex, demos) | CHF 0 |
 | **Discounted** | Custom price per apartment (friends, partners) | Custom |
 | **Standard** | Default platform rate per apartment | Standard rate |
 
@@ -36,9 +36,9 @@ STANDARD_PRICE_PER_APARTMENT = 5 (CHF/month)
 
 Defined in code, not in the database.
 
-### Tenant Billing Fields
+### Host Billing Fields
 
-Added to each tenant document in Firestore:
+Added to each host document in Firestore:
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -57,22 +57,22 @@ Otherwise → STANDARD_PRICE_PER_APARTMENT × number of apartments
 
 ---
 
-## 5. Admin App
+## 5. Apex App
 
 ### Dashboard
 
 Revenue overview stat card:
-- Monthly Revenue (CHF) — sum of all tenant monthly totals
-- Breakdown: X paying tenants · Y unlocked
+- Monthly Revenue (CHF) — sum of all host monthly totals
+- Breakdown: X paying hosts · Y unlocked
 
-### Tenants List
+### Hosts List
 
 Billing-focused table. Columns:
 
 | Column | Content |
 |--------|---------|
-| Name | Tenant name |
-| Slug | Tenant slug |
+| Name | Host name |
+| Slug | Host slug |
 | Apartments | Count |
 | Rate | CHF X/apt, or "Free" if unlocked |
 | Monthly Total | CHF amount (rate × apartments), or "Free" |
@@ -81,7 +81,7 @@ Billing-focused table. Columns:
 
 Languages and currency are not shown here (detail view only).
 
-### Tenant Detail Page
+### Host Detail Page
 
 A "Billing" tab alongside Apartments, Seasons, Users:
 - Unlock toggle with visual indicator
@@ -90,7 +90,7 @@ A "Billing" tab alongside Apartments, Seasons, Users:
 
 ---
 
-## 6. Tenant App
+## 6. Host App
 
 ### Settings Page
 

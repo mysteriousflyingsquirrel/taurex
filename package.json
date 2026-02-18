@@ -3,14 +3,16 @@
   "private": true,
   "workspaces": [
     "apps/*",
-    "firebase"
+    "packages/*"
   ],
   "scripts": {
-    "dev:site": "npm run dev -w apps/site",
-    "dev:tenant": "npm run dev -w apps/tenant",
-    "dev:admin": "npm run dev -w apps/admin",
-    "build:site": "npm run build -w apps/site",
-    "build:tenant": "npm run build -w apps/tenant",
-    "build:admin": "npm run build -w apps/admin"
+    "dev:onboarding": "npm run dev -w apps/onboarding",
+    "dev:booking": "npm run dev -w apps/booking",
+    "dev:host": "npm run dev -w apps/host",
+    "dev:apex": "npm run dev -w apps/apex",
+    "build:onboarding": "npm run build -w apps/onboarding",
+    "build:booking": "npm run build -w apps/booking",
+    "build:host": "npm run build -w apps/host",
+    "build:apex": "npm run build -w apps/apex"
   }
 }

@@ -8,51 +8,48 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isAdmin() {
+    function isApex() {
       return isSignedIn() && request.auth.token.admin == true;
     }
 
-    function isTenantOwner(tenantId) {
+    function isHostOwner(hostId) {
       return isSignedIn()
           && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.tenantId == tenantId;
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.hostId == hostId;
     }
 
     // ─── Users collection ──────────────────────────────────
     match /users/{uid} {
-      // Users can read their own profile; admins can read all
-      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
-      // Only admins can create/update/delete user profiles
-      allow write: if isAdmin();
+      allow read: if isApex() || (isSignedIn() && request.auth.uid == uid);
+      allow write: if isApex();
     }
 
-    // ─── Tenants collection ────────────────────────────────
-    match /tenants/{tenantId} {
-      // Public read (site app needs this for tenant resolution)
+    // ─── Hosts collection ──────────────────────────────────
+    match /hosts/{hostId} {
       allow read: if true;
-      // Only admins can create/update/delete tenants
-      allow write: if isAdmin();
+      allow create, delete: if isApex();
+      allow update: if isApex() || isHostOwner(hostId);
 
       // ─── Apartments subcollection ──────────────────────
       match /apartments/{apartmentId} {
-        // Public read (site app needs this for apartment listing/detail)
+        // Public read (booking app needs this for apartment listing/detail)
         allow read: if true;
-        // Tenant owner or admin can write
-        allow write: if isAdmin() || isTenantOwner(tenantId);
+        // Host owner or apex can write
+        allow write: if isApex() || isHostOwner(hostId);
       }
 
       // ─── Seasons subcollection ─────────────────────────
       match /seasons/{seasonId} {
-        // Public read (site app needs this for pricing display)
+        // Public read (booking app needs this for pricing display)
         allow read: if true;
-        // Tenant owner or admin can write
-        allow write: if isAdmin() || isTenantOwner(tenantId);
+        // Host owner or apex can write
+        allow write: if isApex() || isHostOwner(hostId);
       }
 
       // ─── Catch-all for future subcollections ───────────
       match /{subcollection}/{docId} {
-        allow read: if isAdmin() || isTenantOwner(tenantId);
-        allow write: if isAdmin() || isTenantOwner(tenantId);
+        allow read: if isApex() || isHostOwner(hostId);
+        allow write: if isApex() || isHostOwner(hostId);
       }
     }
   }

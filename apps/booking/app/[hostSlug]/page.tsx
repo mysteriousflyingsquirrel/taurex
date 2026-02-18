@@ -1,0 +1,138 @@
+"use client";
+
+import { useEffect, useState, useMemo } from "react";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import "../../lib/firebase";
+import { fetchHostBySlug, fetchApartments, type Host, type Apartment } from "@taurex/firebase";
+import HostHeader from "../../components/HostHeader";
+import AvailabilityBar from "../../components/AvailabilityBar";
+import ImageCarousel from "../../components/ImageCarousel";
+import { t, getLang, currencySymbol } from "../../lib/i18n";
+
+export default function HostPage() {
+  const params = useParams<{ hostSlug: string }>();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const hostSlug = params.hostSlug;
+
+  const [host, setHost] = useState<Host | null>(null);
+  const [apartments, setApartments] = useState<Apartment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  const checkIn = searchParams.get("checkIn") ?? "";
+  const checkOut = searchParams.get("checkOut") ?? "";
+  const guests = parseInt(searchParams.get("guests") ?? "1", 10) || 1;
+  const onlyAvailable = searchParams.get("onlyAvailable") === "1";
+  const lang = getLang(searchParams.get("lang"), host?.languages ?? ["en"]);
+
+  useEffect(() => {
+    if (!hostSlug) return;
+    setLoading(true);
+    setNotFound(false);
+    fetchHostBySlug(hostSlug)
+      .then(async (h) => {
+        if (!h) { setNotFound(true); setLoading(false); return; }
+        setHost(h);
+        const apts = await fetchApartments(h.id);
+        setApartments(apts);
+        setLoading(false);
+      })
+      .catch(() => { setNotFound(true); setLoading(false); });
+  }, [hostSlug]);
+
+  const filteredApartments = useMemo(() => {
+    let result = apartments;
+    if (guests > 1) result = result.filter((a) => a.facts && a.facts.guests >= guests);
+    return result;
+  }, [apartments, guests]);
+
+  const updateParam = (key: string, value: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === null || value === "") params.delete(key);
+    else params.set(key, value);
+    router.replace(`/${hostSlug}?${params.toString()}`);
+  };
+
+  const setCheckIn = (val: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (val) params.set("checkIn", val); else params.delete("checkIn");
+    if (val && checkOut && val >= checkOut) params.delete("checkOut");
+    router.replace(`/${hostSlug}?${params.toString()}`);
+  };
+
+  const setCheckOut = (val: string) => updateParam("checkOut", val);
+  const setGuests = (val: number) => updateParam("guests", val <= 1 ? null : String(val));
+  const setOnlyAvailable = (val: boolean) => updateParam("onlyAvailable", val ? "1" : null);
+
+  const resetFilters = () => {
+    const params = new URLSearchParams();
+    const langParam = searchParams.get("lang");
+    if (langParam) params.set("lang", langParam);
+    router.replace(`/${hostSlug}?${params.toString()}`);
+  };
+
+  if (notFound) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-6 text-center">
+        <h1 className="text-6xl font-bold text-gray-300">404</h1>
+        <p className="mt-4 text-xl font-semibold text-gray-700">{t(lang, "notFound.host")}</p>
+        <a href="https://taurex.one" className="mt-6 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">{t(lang, "notFound.backToHome")}</a>
+      </div>
+    );
+  }
+
+  if (loading || !host) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+      </div>
+    );
+  }
+
+  const currency = currencySymbol[host.baseCurrency] ?? host.baseCurrency ?? "CHF";
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <HostHeader host={host} basePath={`/${host.slug}`} />
+      <main className="mx-auto max-w-7xl px-6 py-8">
+        <h1 className="text-2xl font-bold text-gray-900">{t(lang, "apartments.title")}</h1>
+        <div className="mt-4">
+          <AvailabilityBar checkIn={checkIn} checkOut={checkOut} guests={guests} onlyAvailable={onlyAvailable} lang={lang} onCheckInChange={setCheckIn} onCheckOutChange={setCheckOut} onGuestsChange={setGuests} onOnlyAvailableChange={setOnlyAvailable} onReset={resetFilters} />
+        </div>
+        {filteredApartments.length === 0 ? (
+          <div className="mt-16 text-center">
+            <p className="text-lg text-gray-500">{apartments.length === 0 ? t(lang, "apartments.empty") : t(lang, "apartments.emptyFiltered")}</p>
+          </div>
+        ) : (
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredApartments.map((apt) => (
+              <Link key={apt.id} href={`/${host.slug}/${apt.slug}?${searchParams.toString()}`} className="group overflow-hidden rounded-2xl bg-white shadow-lg transition hover:-translate-y-1 hover:shadow-2xl">
+                <div className="relative">
+                  <ImageCarousel images={apt.images ?? []} height="h-56" emptyText={t(lang, "apartment.noImages")} />
+                  {apt.priceDefault > 0 && (
+                    <div className="absolute right-3 top-3 rounded-lg bg-gray-900/80 px-3 py-1.5 text-sm font-semibold text-white backdrop-blur-sm">
+                      {currency} {apt.priceDefault} <span className="text-xs font-normal text-gray-300">{t(lang, "apartment.perNight")}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="p-5">
+                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600">{apt.name}</h3>
+                  {apt.facts && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">{apt.facts.guests} {t(lang, "apartment.guests")}</span>
+                      {apt.facts.bedrooms > 0 && <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">{apt.facts.bedrooms} {t(lang, "apartment.bedrooms")}</span>}
+                      {apt.facts.bathrooms > 0 && <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">{apt.facts.bathrooms} {t(lang, "apartment.bathrooms")}</span>}
+                      {apt.facts.sqm > 0 && <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">{apt.facts.sqm} {t(lang, "apartment.sqm")}</span>}
+                    </div>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
