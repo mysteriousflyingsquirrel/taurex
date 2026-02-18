@@ -14,6 +14,8 @@ import {
   getEffectivePrice,
   getMonthlyTotal,
   formatDate,
+  currencySymbol,
+  formatMoney,
   type LanguageCode,
   type CurrencyCode,
   type HostBilling,
@@ -21,23 +23,17 @@ import {
   type SeasonDateRange,
 } from "@taurex/firebase";
 import { useManagedHost } from "../contexts/ManagedHostContext";
-import { useAutosave } from "../hooks/useAutosave";
-import AutosaveIndicator from "../components/AutosaveIndicator";
+import { useToast } from "../components/Toast";
+import Button from "../components/Button";
+import StickyFormFooter from "../components/StickyFormFooter";
+import DiscardChangesModal from "../components/DiscardChangesModal";
+import { useDirtyForm } from "../hooks/useDirtyForm";
+import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 
 interface SettingsData {
   languages: LanguageCode[];
   baseCurrency: CurrencyCode;
 }
-
-const currencySymbol = (code: string) => {
-  const map: Record<string, string> = {
-    CHF: "CHF",
-    EUR: "€",
-    USD: "$",
-    GBP: "£",
-  };
-  return map[code] ?? code;
-};
 
 const COLOUR_PALETTE = [
   "#EF4444", "#F97316", "#F59E0B", "#EAB308",
@@ -64,6 +60,7 @@ export default function HostConfigPage() {
     refreshApartments,
   } = useManagedHost();
 
+  const toast = useToast();
   const navigate = useNavigate();
   const editBase = `/hosts/${hostId}/edit`;
   const viewBase = `/hosts/${hostId}`;
@@ -72,27 +69,31 @@ export default function HostConfigPage() {
     languages,
     baseCurrency,
   });
+  const savedSettings: SettingsData = { languages, baseCurrency };
+  const settingsDirty = useDirtyForm(settings, savedSettings);
+  const { showModal, confirmDiscard, cancelDiscard } = useUnsavedChangesGuard(settingsDirty && !readonly);
+
   const [deleting, setDeleting] = useState<string | null>(null);
   const [billingSaving, setBillingSaving] = useState(false);
 
-  // --- Settings autosave ---
-  const handleSave = useCallback(
-    async (data: SettingsData) => {
+  const [settingsSaving, setSettingsSaving] = useState(false);
+
+  const saveSettings = async () => {
+    if (readonly) return;
+    setSettingsSaving(true);
+    try {
       await updateHost(hostId, {
-        languages: data.languages,
-        baseCurrency: data.baseCurrency,
+        languages: settings.languages,
+        baseCurrency: settings.baseCurrency,
       });
       await refreshHost();
-    },
-    [hostId, refreshHost]
-  );
-
-  const { saving, saved, error } = useAutosave({
-    data: settings,
-    onSave: handleSave,
-    enabled: !readonly,
-    delay: 1000,
-  });
+      toast.success("Settings saved.");
+    } catch {
+      toast.error("Saving failed.");
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
 
   const toggleLanguage = (code: LanguageCode) => {
     if (readonly) return;
@@ -134,14 +135,14 @@ export default function HostConfigPage() {
       await updateHost(hostId, { billing: updated });
       await refreshHost();
     } catch {
-      alert("Failed to update billing.");
+      toast.error("Failed to update billing.");
     } finally {
       setBillingSaving(false);
     }
   };
 
   return (
-    <div>
+    <div className={!readonly ? "pb-24" : ""}>
       {/* Header (only in edit mode — view layout has its own header) */}
       {!readonly && (
         <div className="flex items-center justify-between">
@@ -161,8 +162,30 @@ export default function HostConfigPage() {
               Edit: {host.name}
             </h1>
           </div>
-          <AutosaveIndicator saving={saving} saved={saved} error={error} />
         </div>
+      )}
+
+      <DiscardChangesModal
+        open={showModal}
+        onCancel={cancelDiscard}
+        onDiscard={confirmDiscard}
+      />
+
+      {!readonly && (
+        <StickyFormFooter
+          dirty={settingsDirty}
+          left={null}
+          right={
+            <Button
+              variant="primary"
+              onClick={saveSettings}
+              loading={settingsSaving}
+              disabled={readonly}
+            >
+              {settingsSaving ? "Saving…" : "Save"}
+            </Button>
+          }
+        />
       )}
 
       {/* Host Info */}
@@ -191,7 +214,7 @@ export default function HostConfigPage() {
           <div>
             <p className="text-sm text-gray-500">Rate / apartment</p>
             <p className="mt-1 text-2xl font-bold text-gray-900">
-              {billing.unlocked ? "Free" : `CHF ${effectivePrice}`}
+              {billing.unlocked ? "Free" : formatMoney(effectivePrice, "CHF")}
             </p>
           </div>
           <div>
@@ -203,7 +226,7 @@ export default function HostConfigPage() {
           <div>
             <p className="text-sm text-gray-500">Monthly total</p>
             <p className="mt-1 text-2xl font-bold text-gray-900">
-              {billing.unlocked ? "Free" : `CHF ${monthlyTotal}`}
+              {billing.unlocked ? "Free" : formatMoney(monthlyTotal, "CHF")}
             </p>
           </div>
         </div>
@@ -273,12 +296,13 @@ export default function HostConfigPage() {
                 / apartment / month
               </span>
               {!readonly && billing.pricePerApartment !== null && (
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => saveBilling({ pricePerApartment: null })}
-                  className="text-sm text-gray-400 hover:text-gray-600"
                 >
                   Reset to standard
-                </button>
+                </Button>
               )}
             </div>
             {billing.pricePerApartment !== null &&
@@ -394,12 +418,12 @@ export default function HostConfigPage() {
             Apartments ({apartments.length})
           </h2>
           {!readonly && (
-            <Link
-              to={`${editBase}/apartments/new`}
-              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-amber-400"
+            <Button
+              variant="primary"
+              onClick={() => navigate(`${editBase}/apartments/new`)}
             >
               + Add Apartment
-            </Link>
+            </Button>
           )}
         </div>
 
@@ -407,12 +431,9 @@ export default function HostConfigPage() {
           <div className="mt-4 rounded-xl border border-gray-200 p-8 text-center">
             <p className="text-gray-600">No apartments yet.</p>
             {!readonly && (
-              <Link
-                to={`${editBase}/apartments/new`}
-                className="mt-2 inline-block text-sm font-medium text-amber-600 hover:text-amber-700"
-              >
-                Create the first apartment →
-              </Link>
+              <div className="mt-3">
+                <Button variant="primary" size="sm" onClick={() => navigate(`${editBase}/apartments/new`)}>Create the first apartment</Button>
+              </div>
             )}
           </div>
         ) : (
@@ -489,13 +510,16 @@ export default function HostConfigPage() {
                             className="flex items-center gap-2"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <Link
-                              to={aptUrl}
-                              className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => navigate(aptUrl)}
                             >
                               Edit
-                            </Link>
-                            <button
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
                               onClick={() =>
                                 handleDeleteApartment(
                                   apt.slug,
@@ -503,10 +527,10 @@ export default function HostConfigPage() {
                                 )
                               }
                               disabled={deleting === apt.slug}
-                              className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100 disabled:opacity-50"
+                              loading={deleting === apt.slug}
                             >
-                              {deleting === apt.slug ? "…" : "Delete"}
-                            </button>
+                              Delete
+                            </Button>
                           </div>
                         </td>
                       )}
@@ -531,6 +555,7 @@ function SeasonsSection({
   hostId: string;
   readonly: boolean;
 }) {
+  const toast = useToast();
   const [year, setYear] = useState(BASE_YEAR);
   const [seasons, setSeasons] = useState<Record<string, Season>>({});
   const [loading, setLoading] = useState(true);
@@ -550,25 +575,24 @@ function SeasonsSection({
     });
   }, [hostId, year]);
 
-  // Autosave seasons (edit mode only)
-  const handleSave = useCallback(
-    async (data: Record<string, Season>) => {
+  const [seasonsSaving, setSeasonsSaving] = useState(false);
+
+  const saveSeasons = useCallback(async () => {
+    setSeasonsSaving(true);
+    try {
       await Promise.all(
-        Object.entries(data).map(([id, s]) => {
+        Object.entries(seasons).map(([id, s]) => {
           const { id: _, ...rest } = s;
           return setSeason(hostId, id, rest);
         })
       );
-    },
-    [hostId]
-  );
-
-  const { saving, saved, error } = useAutosave({
-    data: seasons,
-    onSave: handleSave,
-    enabled: !loading && !readonly,
-    delay: 2000,
-  });
+      toast.success("Seasons saved.");
+    } catch {
+      toast.error("Saving failed.");
+    } finally {
+      setSeasonsSaving(false);
+    }
+  }, [hostId, seasons, toast]);
 
   const handleDeleteSeason = async (seasonId: string) => {
     const season = seasons[seasonId];
@@ -603,12 +627,12 @@ function SeasonsSection({
     if (modal.mode === "create") {
       const slugPart = slugify(modal.name);
       if (!slugPart) {
-        alert("Name is required.");
+        toast.error("Name is required.");
         return;
       }
       const id = `${year}-${slugPart}`;
       if (seasons[id]) {
-        alert("A season with this ID already exists for this year.");
+        toast.error("A season with this ID already exists for this year.");
         return;
       }
       const newSeason: Season = {
@@ -645,7 +669,7 @@ function SeasonsSection({
       const copied = await copySeasonsToYear(hostId, prevYear, year);
       setSeasons((prev) => ({ ...prev, ...copied }));
     } catch {
-      alert("Failed to copy seasons.");
+      toast.error("Failed to copy seasons.");
     } finally {
       setCopying(false);
     }
@@ -704,24 +728,34 @@ function SeasonsSection({
         <div className="flex items-center gap-3">
           <h2 className="text-lg font-semibold text-gray-900">Seasons</h2>
           {!readonly && (
-            <AutosaveIndicator saving={saving} saved={saved} error={error} />
+            <Button
+              variant="primary"
+              onClick={saveSeasons}
+              loading={seasonsSaving}
+              disabled={seasonsSaving}
+            >
+              {seasonsSaving ? "Saving…" : "Save seasons"}
+            </Button>
           )}
         </div>
         {!readonly && (
           <div className="flex items-center gap-3">
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={handleCopyFromPreviousYear}
               disabled={copying}
-              className="text-sm font-medium text-gray-500 hover:text-gray-700 disabled:opacity-50"
+              loading={copying}
             >
               {copying ? "Copying…" : `Copy from ${year - 1}`}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
               onClick={handleCreateSeason}
-              className="text-sm font-medium text-amber-600 hover:text-amber-700"
             >
               + Add Season
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -769,18 +803,20 @@ function SeasonsSection({
                 </div>
                 {!readonly && (
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => handleEditSeason(season.id)}
-                      className="text-sm text-gray-400 hover:text-gray-600"
                     >
                       Edit
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
                       onClick={() => handleDeleteSeason(season.id)}
-                      className="text-sm text-red-400 hover:text-red-600"
                     >
                       Delete
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -825,24 +861,26 @@ function SeasonsSection({
                             }
                             className="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
                           />
-                          <button
+                          <Button
+                            variant="destructive"
+                            size="sm"
                             onClick={() => removeDateRange(season.id, idx)}
-                            className="text-red-400 hover:text-red-600"
                           >
                             ×
-                          </button>
+                          </Button>
                         </>
                       )}
                     </div>
                   ))
                 )}
                 {!readonly && (
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={() => addDateRange(season.id)}
-                    className="text-sm font-medium text-amber-600 hover:text-amber-700"
                   >
                     + Add Range
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -899,18 +937,18 @@ function SeasonsSection({
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-3">
-              <button
+              <Button
+                variant="secondary"
                 onClick={() => setModal(null)}
-                className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
                 onClick={handleModalSubmit}
-                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-amber-400"
               >
                 {modal.mode === "create" ? "Create" : "Update"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

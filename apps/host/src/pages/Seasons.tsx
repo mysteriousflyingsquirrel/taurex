@@ -9,8 +9,11 @@ import {
   type SeasonDateRange,
 } from "@taurex/firebase";
 import { useHost } from "../contexts/HostContext";
-import { useAutosave } from "../hooks/useAutosave";
-import AutosaveIndicator from "../components/AutosaveIndicator";
+import Button from "../components/Button";
+import StickyFormFooter from "../components/StickyFormFooter";
+import DiscardChangesModal from "../components/DiscardChangesModal";
+import { useToast } from "../components/Toast";
+import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 
 const COLOUR_PALETTE = [
   "#EF4444", "#F97316", "#F59E0B", "#EAB308",
@@ -149,6 +152,9 @@ export default function Seasons() {
   const [hoverDay, setHoverDay] = useState<DateString | null>(null);
   const [year, setYear] = useState(BASE_YEAR);
   const [copying, setCopying] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [lastSavedSeasons, setLastSavedSeasons] = useState<Record<string, Season>>({});
+  const toast = useToast();
   const [modal, setModal] = useState<{
     mode: "create" | "edit";
     id?: string;
@@ -162,32 +168,36 @@ export default function Seasons() {
     setLoading(true);
     fetchSeasons(hostId, year).then((data) => {
       setSeasons(data);
+      setLastSavedSeasons(data);
       setLoading(false);
       const keys = Object.keys(data);
       setSelectedId((prev) => (prev && data[prev] ? prev : keys[0] ?? null));
     });
   }, [hostId, year]);
 
-  // Autosave
-  const handleSave = useCallback(
-    async (data: Record<string, Season>) => {
-      if (!hostId) return;
+  const isDirty =
+    JSON.stringify(seasons) !== JSON.stringify(lastSavedSeasons);
+
+  const { showModal, confirmDiscard, cancelDiscard } = useUnsavedChangesGuard(isDirty);
+
+  const handleSaveSeasons = useCallback(async () => {
+    if (!hostId || !isDirty) return;
+    setSaving(true);
+    try {
       await Promise.all(
-        Object.entries(data).map(([id, s]) => {
+        Object.entries(seasons).map(([id, s]) => {
           const { id: _, ...rest } = s;
           return setSeason(hostId, id, rest);
         })
       );
-    },
-    [hostId]
-  );
-
-  const { saving, saved, error: saveError } = useAutosave({
-    data: seasons,
-    onSave: handleSave,
-    enabled: !loading && !!hostId,
-    delay: 2000,
-  });
+      setLastSavedSeasons(seasons);
+      toast.success("Seasons saved.");
+    } catch {
+      toast.error("Saving failed.");
+    } finally {
+      setSaving(false);
+    }
+  }, [hostId, seasons, isDirty, toast]);
 
   // Build day → season lookup
   const dayMap = useMemo(() => {
@@ -311,12 +321,12 @@ export default function Seasons() {
     if (modal.mode === "create") {
       const slugPart = slugify(modal.name);
       if (!slugPart) {
-        alert("Name is required.");
+        toast.error("Name is required.");
         return;
       }
       const id = `${year}-${slugPart}`;
       if (seasons[id]) {
-        alert("A season with this ID already exists for this year.");
+        toast.error("Season already exists.");
         return;
       }
       const newSeason: Season = {
@@ -354,8 +364,9 @@ export default function Seasons() {
     try {
       const copied = await copySeasonsToYear(hostId, prevYear, year);
       setSeasons((prev) => ({ ...prev, ...copied }));
+      toast.success("Seasons copied.");
     } catch {
-      alert("Failed to copy seasons.");
+      toast.error("Failed to copy seasons.");
     } finally {
       setCopying(false);
     }
@@ -373,13 +384,10 @@ export default function Seasons() {
   const seasonList = Object.values(seasons);
 
   return (
-    <div>
+    <div className="pb-24">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-gray-900">Seasons</h1>
-          <AutosaveIndicator saving={saving} saved={saved} error={saveError} />
-        </div>
+        <h1 className="text-2xl font-bold text-gray-900">Seasons</h1>
       </div>
 
       {/* Year Selector */}
@@ -410,19 +418,22 @@ export default function Seasons() {
             Seasons for {year} ({seasonList.length})
           </h2>
           <div className="flex items-center gap-3">
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={handleCopyFromPreviousYear}
               disabled={copying}
-              className="text-sm font-medium text-gray-500 hover:text-gray-700 disabled:opacity-50"
+              loading={copying}
             >
               {copying ? "Copying…" : `Copy from ${year - 1}`}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={handleCreateSeason}
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
             >
-              + Add Season
-            </button>
+              + Add season
+            </Button>
           </div>
         </div>
 
@@ -596,22 +607,36 @@ export default function Seasons() {
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={() => setModal(null)}
-                className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
-              >
+              <Button variant="secondary" onClick={() => setModal(null)}>
                 Cancel
-              </button>
-              <button
-                onClick={handleModalSubmit}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-              >
+              </Button>
+              <Button variant="primary" onClick={handleModalSubmit}>
                 {modal.mode === "create" ? "Create" : "Update"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       )}
+
+      <StickyFormFooter
+        dirty={isDirty}
+        left={null}
+        right={
+          <Button
+            variant="primary"
+            loading={saving}
+            disabled={!isDirty}
+            onClick={handleSaveSeasons}
+          >
+            Save seasons
+          </Button>
+        }
+      />
+      <DiscardChangesModal
+        open={showModal}
+        onCancel={cancelDiscard}
+        onDiscard={confirmDiscard}
+      />
     </div>
   );
 }

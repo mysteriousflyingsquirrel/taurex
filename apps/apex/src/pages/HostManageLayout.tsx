@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, Outlet } from "react-router-dom";
+import { useParams, Link, Outlet, useNavigate } from "react-router-dom";
 import {
   fetchHostBySlug,
   fetchApartments,
@@ -7,10 +7,12 @@ import {
   type Apartment,
 } from "@taurex/firebase";
 import { ManagedHostProvider } from "../contexts/ManagedHostContext";
+import Button from "../components/Button";
 
 export default function HostManageLayout() {
   const { hostId } = useParams<{ hostId: string }>();
-  const [tenant, setTenant] = useState<Host | null>(null);
+  const navigate = useNavigate();
+  const [host, setHost] = useState<Host | null>(null);
   const [apartments, setApartments] = useState<Apartment[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -26,7 +28,7 @@ export default function HostManageLayout() {
           setLoading(false);
           return;
         }
-        setTenant(t);
+        setHost(t);
         const apts = await fetchApartments(t.id);
         setApartments(apts);
         setLoading(false);
@@ -46,24 +48,21 @@ export default function HostManageLayout() {
     );
   }
 
-  if (notFound || !tenant) {
+  if (notFound || !host) {
     return (
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Host Not Found</h1>
         <p className="mt-2 text-sm text-gray-500">
           The host "{hostId}" does not exist.
         </p>
-        <Link
-          to="/hosts"
-          className="mt-4 inline-block text-sm font-medium text-amber-600 hover:text-amber-700"
-        >
-          ← Back to Hosts
-        </Link>
+        <div className="mt-4">
+          <Button variant="secondary" size="sm" onClick={() => navigate("/hosts")}>← Back to Hosts</Button>
+        </div>
       </div>
     );
   }
 
-  const confirmPhrase = `edit host ${tenant.slug}`;
+  const confirmPhrase = `edit host ${host.slug}`;
 
   if (!confirmed) {
     return (
@@ -75,10 +74,10 @@ export default function HostManageLayout() {
           </Link>
           <span>›</span>
           <Link
-            to={`/hosts/${tenant.id}`}
+            to={`/hosts/${host.id}`}
             className="hover:text-amber-600"
           >
-            {tenant.name}
+            {host.name}
           </Link>
           <span>›</span>
           <span className="text-gray-900">Edit</span>
@@ -102,7 +101,7 @@ export default function HostManageLayout() {
               </svg>
             </div>
             <h2 className="mt-4 text-xl font-bold text-gray-900">
-              Edit {tenant.name}
+              Edit {host.name}
             </h2>
             <p className="mt-2 text-sm text-gray-600">
               You are about to edit this host's configuration. To confirm,
@@ -137,7 +136,7 @@ export default function HostManageLayout() {
   }
 
   return (
-    <ManagedHostProvider tenant={tenant} apartments={apartments} readonly={false}>
+    <ManagedHostProvider tenant={host} apartments={apartments} readonly={false}>
       {/* Amber safety banner */}
       <div className="mb-6 flex items-center gap-3 rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3">
         <svg
@@ -154,11 +153,11 @@ export default function HostManageLayout() {
           />
         </svg>
         <p className="text-sm font-medium text-amber-800">
-          You are editing <strong>{tenant.name}</strong>'s configuration.
-          Changes are saved automatically.
+          You are editing <strong>{host.name}</strong>'s configuration.
+          Remember to save your changes before exiting.
         </p>
         <Link
-          to={`/hosts/${tenant.id}`}
+          to={`/hosts/${host.id}`}
           className="ml-auto rounded-lg bg-amber-200 px-3 py-1 text-sm font-medium text-amber-900 hover:bg-amber-300"
         >
           Exit Edit Mode

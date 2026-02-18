@@ -1,0 +1,35 @@
+# Cursor Rules — Taurex.one
+
+## Operating Mode
+- Follow repository docs as source of truth.
+- Do not invent features or flows.
+- Prefer small, reviewable changes.
+- Never break multi-tenant isolation.
+- Host = host app.
+- Admin = apex app.
+
+## Architecture
+Monorepo (npm workspaces):
+- apps/onboarding
+- apps/booking
+- apps/host
+- apps/apex
+- packages/firebase
+
+## Code Standards
+- TypeScript-first.
+- No silent failures.
+- Keep components small.
+- Extract logic into hooks/services.
+- Keep naming consistent.
+
+## UI/UX
+- Follow docs/ai_skills/taurex_ui_system.md
+- When improving UI, apply docs/ai_skills/ui_ux_pro_max.md
+- Do not change business logic unless requested.
+
+## Working Pattern
+When implementing:
+1) Provide short plan.
+2) Implement.
+3) Summarize what changed.

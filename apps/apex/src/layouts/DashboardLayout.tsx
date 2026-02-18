@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Outlet, NavLink } from "react-router-dom";
 import { signOut } from "@taurex/firebase";
 import { useAuth } from "../contexts/AuthContext";
@@ -55,87 +56,97 @@ const navItems = [
 
 export default function DashboardLayout() {
   const { user } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
   };
 
+  const sidebarContent = (
+    <>
+      <div className="flex h-16 items-center border-b border-gray-800 px-6">
+        <span className="text-xl font-bold tracking-tight text-white">taurex</span>
+        <span className="ml-2 rounded bg-amber-500 px-1.5 py-0.5 text-xs font-semibold text-gray-900">APEX</span>
+      </div>
+      <nav className="flex-1 space-y-1 px-4 py-6">
+        {navItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            onClick={() => setSidebarOpen(false)}
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${
+                isActive
+                  ? "bg-gray-800 text-white"
+                  : "text-gray-400 hover:bg-gray-800 hover:text-white"
+              }`
+            }
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              {item.icon}
+            </svg>
+            {item.label}
+          </NavLink>
+        ))}
+      </nav>
+      <div className="border-t border-gray-800 p-4">
+        <p className="truncate px-3 text-xs text-gray-500">{user?.email}</p>
+        <button
+          onClick={handleLogout}
+          className="mt-2 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white"
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+          </svg>
+          Logout
+        </button>
+      </div>
+    </>
+  );
+
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className="flex w-64 flex-col border-r border-gray-800 bg-gray-900">
-        {/* Logo */}
-        <div className="flex h-16 items-center border-b border-gray-800 px-6">
-          <span className="text-xl font-bold tracking-tight text-white">
-            taurex
-          </span>
-          <span className="ml-2 rounded bg-amber-500 px-1.5 py-0.5 text-xs font-semibold text-gray-900">
-            APEX
-          </span>
-        </div>
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
 
-        {/* Navigation */}
-        <nav className="flex-1 space-y-1 px-4 py-6">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${
-                  isActive
-                    ? "bg-gray-800 text-white"
-                    : "text-gray-400 hover:bg-gray-800 hover:text-white"
-                }`
-              }
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-              >
-                {item.icon}
-              </svg>
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        {/* User & Logout */}
-        <div className="border-t border-gray-800 p-4">
-          <p className="truncate px-3 text-xs text-gray-500">
-            {user?.email}
-          </p>
-          <button
-            onClick={handleLogout}
-            className="mt-2 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white"
-          >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"
-              />
-            </svg>
-            Logout
-          </button>
-        </div>
+      {/* Mobile sidebar drawer */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-gray-900 shadow-xl transition-transform duration-200 md:hidden ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {sidebarContent}
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        <div className="px-8 py-8">
-          <Outlet />
+      {/* Desktop sidebar */}
+      <aside className="hidden w-64 flex-col border-r border-gray-800 bg-gray-900 md:flex">
+        {sidebarContent}
+      </aside>
+
+      {/* Main content */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex h-14 items-center border-b border-gray-200 bg-white px-4 md:hidden">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="rounded-lg p-2 text-gray-600 hover:bg-gray-100"
+            aria-label="Open menu"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          </button>
+          <span className="ml-3 text-lg font-bold tracking-tight text-gray-900">taurex</span>
+          <span className="ml-2 rounded bg-amber-500 px-1.5 py-0.5 text-xs font-semibold text-gray-900">APEX</span>
         </div>
-      </main>
+
+        <main className="flex-1 overflow-auto">
+          <div className="px-6 py-6 md:px-8 md:py-8">
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

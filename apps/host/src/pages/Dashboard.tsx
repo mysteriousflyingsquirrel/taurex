@@ -1,8 +1,10 @@
 import { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { fetchApartments, fetchSeasons, type Apartment } from "@taurex/firebase";
 import { useAuth } from "../contexts/AuthContext";
 import { useHost } from "../contexts/HostContext";
+import PageHeader from "../components/PageHeader";
+import Button from "../components/Button";
 
 interface ChecklistItem {
   key: string;
@@ -14,6 +16,7 @@ interface ChecklistItem {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { host, hostId, languages } = useHost();
   const [apartments, setApartments] = useState<Apartment[]>([]);
@@ -85,10 +88,7 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-      <p className="mt-1 text-sm text-gray-600">
-        Welcome back, {host?.name}
-      </p>
+      <PageHeader title="Dashboard" />
 
       {/* Stats */}
       <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -202,12 +202,7 @@ export default function Dashboard() {
                     </p>
                   </div>
                   {!item.done && (
-                    <Link
-                      to={item.link}
-                      className="flex-shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
-                    >
-                      {item.linkLabel}
-                    </Link>
+                    <Button variant="primary" size="sm" onClick={() => navigate(item.link)}>{item.linkLabel}</Button>
                   )}
                 </div>
               ))}
@@ -220,24 +215,9 @@ export default function Dashboard() {
       <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
         <h2 className="text-lg font-semibold text-gray-900">Quick Actions</h2>
         <div className="mt-4 flex flex-wrap gap-3">
-          <Link
-            to="/apartments/new"
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-          >
-            + Add Apartment
-          </Link>
-          <Link
-            to="/seasons"
-            className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
-          >
-            Manage Seasons
-          </Link>
-          <Link
-            to="/settings"
-            className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
-          >
-            Settings
-          </Link>
+          <Button variant="primary" onClick={() => navigate("/apartments/new")}>+ Add Apartment</Button>
+          <Button variant="secondary" onClick={() => navigate("/seasons")}>Manage Seasons</Button>
+          <Button variant="secondary" onClick={() => navigate("/settings")}>Settings</Button>
         </div>
       </div>
     </div>

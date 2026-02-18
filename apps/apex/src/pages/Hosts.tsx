@@ -1,19 +1,26 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   fetchHosts,
   fetchApartments,
   getEffectivePrice,
   getMonthlyTotal,
+  formatMoney,
+  deleteHost,
   type Host,
 } from "@taurex/firebase";
+import PageHeader from "../components/PageHeader";
+import Button from "../components/Button";
+import { useToast } from "../components/Toast";
 
 export default function Hosts() {
+  const navigate = useNavigate();
+  const toast = useToast();
   const [hosts, setHosts] = useState<Host[]>([]);
   const [aptCounts, setAptCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchHosts()
@@ -38,33 +45,42 @@ export default function Hosts() {
       });
   }, []);
 
-  const filtered = hosts.filter(
-    (t) =>
-      t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.slug.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const platformTotal = filtered.reduce((sum, t) => {
+  const platformTotal = hosts.reduce((sum, t) => {
     const count = aptCounts[t.id] ?? 0;
     return sum + getMonthlyTotal(t.billing, count);
   }, 0);
 
+  const handleDelete = async (e: React.MouseEvent, host: Host) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm(`Delete host "${host.name}"? This cannot be undone.`)) return;
+    setDeletingId(host.id);
+    try {
+      await deleteHost(host.id);
+      setHosts((prev) => prev.filter((h) => h.id !== host.id));
+      setAptCounts((prev) => {
+        const next = { ...prev };
+        delete next[host.id];
+        return next;
+      });
+      toast.success("Host deleted.");
+    } catch {
+      toast.error("Failed to delete host.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Hosts</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Manage all hosts on the platform
-          </p>
-        </div>
-        <Link
-          to="/hosts/new"
-          className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-amber-400"
-        >
-          + Create Host
-        </Link>
-      </div>
+      <PageHeader
+        title="Hosts"
+        action={
+          <Button variant="primary" onClick={() => navigate("/hosts/new")}>
+            + Create host
+          </Button>
+        }
+      />
 
       {error && (
         <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -72,27 +88,14 @@ export default function Hosts() {
         </div>
       )}
 
-      {/* Search */}
-      <div className="mt-6">
-        <input
-          type="text"
-          placeholder="Search by name or slug…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-sm rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
-        />
-      </div>
-
-      {/* Table */}
       {loading ? (
         <p className="mt-8 text-sm text-gray-500">Loading hosts…</p>
-      ) : filtered.length === 0 ? (
-        <p className="mt-8 text-sm text-gray-500">
-          {search ? "No hosts match your search." : "No hosts yet."}
-        </p>
+      ) : hosts.length === 0 ? (
+        <p className="mt-8 text-sm text-gray-500">No hosts yet.</p>
       ) : (
         <>
-          <div className="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white">
+          {/* Desktop table */}
+          <div className="mt-6 hidden overflow-hidden rounded-xl border border-gray-200 bg-white md:block">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
@@ -116,14 +119,26 @@ export default function Hosts() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filtered.map((host) => {
+                {hosts.map((host) => {
                   const count = aptCounts[host.id] ?? 0;
                   const isUnlocked = !!host.billing?.unlocked;
                   const rate = getEffectivePrice(host.billing);
                   const total = getMonthlyTotal(host.billing, count);
 
                   return (
-                    <tr key={host.id} className="hover:bg-gray-50">
+                    <tr
+                      key={host.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => navigate(`/hosts/${host.id}`)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          navigate(`/hosts/${host.id}`);
+                        }
+                      }}
+                      className="cursor-pointer hover:bg-gray-50"
+                    >
                       <td className="px-6 py-4 font-medium text-gray-900">
                         {host.name}
                       </td>
@@ -139,33 +154,44 @@ export default function Hosts() {
                         {isUnlocked ? (
                           <span className="text-green-600">Free</span>
                         ) : (
-                          `CHF ${rate}`
+                          formatMoney(rate, "CHF")
                         )}
                       </td>
                       <td className="px-6 py-4 text-right font-medium text-gray-900">
                         {isUnlocked ? (
                           <span className="text-green-600">Free</span>
                         ) : (
-                          `CHF ${total}`
+                          formatMoney(total, "CHF")
                         )}
                       </td>
                       <td className="px-6 py-4">
                         <StatusBadge host={host} />
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-2">
-                          <Link
-                            to={`/hosts/${host.id}`}
-                            className="text-sm font-medium text-amber-600 hover:text-amber-700"
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => navigate(`/hosts/${host.id}`)}
                           >
                             View
-                          </Link>
-                          <Link
-                            to={`/hosts/${host.id}/edit`}
-                            className="text-sm font-medium text-gray-500 hover:text-gray-700"
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => navigate(`/hosts/${host.id}/edit`)}
                           >
                             Edit
-                          </Link>
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={(e) => handleDelete(e, host)}
+                            disabled={deletingId === host.id}
+                            loading={deletingId === host.id}
+                          >
+                            Delete
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -175,13 +201,80 @@ export default function Hosts() {
             </table>
           </div>
 
+          {/* Mobile cards */}
+          <div className="mt-6 space-y-3 md:hidden">
+            {hosts.map((host) => {
+              const count = aptCounts[host.id] ?? 0;
+              const isUnlocked = !!host.billing?.unlocked;
+              const rate = getEffectivePrice(host.billing);
+              const total = getMonthlyTotal(host.billing, count);
+              return (
+                <div
+                  key={host.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => navigate(`/hosts/${host.id}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      navigate(`/hosts/${host.id}`);
+                    }
+                  }}
+                  className="cursor-pointer rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:border-amber-200"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">{host.name}</p>
+                      <p className="text-xs text-gray-500">{host.slug}</p>
+                    </div>
+                    <StatusBadge host={host} />
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+                    <span>{count} apts</span>
+                    <span>
+                      Rate: {isUnlocked ? "Free" : formatMoney(rate, "CHF")}
+                    </span>
+                    <span>
+                      Total: {isUnlocked ? "Free" : formatMoney(total, "CHF")}/mo
+                    </span>
+                  </div>
+                  <div className="mt-3 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => navigate(`/hosts/${host.id}`)}
+                    >
+                      View
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => navigate(`/hosts/${host.id}/edit`)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={(e) => handleDelete(e, host)}
+                      disabled={deletingId === host.id}
+                      loading={deletingId === host.id}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
           {/* Footer total */}
           <div className="mt-3 flex items-center justify-end gap-4 px-6 text-sm">
             <span className="text-gray-500">
-              {filtered.length} host{filtered.length !== 1 ? "s" : ""}
+              {hosts.length} host{hosts.length !== 1 ? "s" : ""}
             </span>
             <span className="font-semibold text-gray-900">
-              Total: CHF {platformTotal} / month
+              Total: {formatMoney(platformTotal, "CHF")} / month
             </span>
           </div>
         </>

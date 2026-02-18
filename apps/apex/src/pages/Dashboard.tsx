@@ -1,18 +1,22 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   fetchHosts,
   fetchApartments,
   fetchAllUsers,
   getMonthlyTotal,
   getEffectivePrice,
+  formatMoney,
   type Host,
 } from "@taurex/firebase";
+import PageHeader from "../components/PageHeader";
+import Button from "../components/Button";
 
 export default function Dashboard() {
-  const [tenants, setTenants] = useState<Host[]>([]);
+  const navigate = useNavigate();
+  const [hosts, setHosts] = useState<Host[]>([]);
   const [aptCounts, setAptCounts] = useState<Record<string, number>>({});
-  const [tenantCount, setTenantCount] = useState<number | null>(null);
+  const [hostCount, setHostCount] = useState<number | null>(null);
   const [apartmentCount, setApartmentCount] = useState<number | null>(null);
   const [userCount, setUserCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -20,15 +24,15 @@ export default function Dashboard() {
 
   useEffect(() => {
     Promise.all([fetchHosts(), fetchAllUsers()])
-      .then(async ([tenantList, users]) => {
-        setTenants(tenantList);
-        setTenantCount(tenantList.length);
+      .then(async ([hostList, users]) => {
+        setHosts(hostList);
+        setHostCount(hostList.length);
         setUserCount(users.length);
 
         const counts: Record<string, number> = {};
         let totalApts = 0;
         await Promise.all(
-          tenantList.map(async (t) => {
+          hostList.map(async (t) => {
             const apts = await fetchApartments(t.id);
             counts[t.id] = apts.length;
             totalApts += apts.length;
@@ -47,26 +51,23 @@ export default function Dashboard() {
       });
   }, []);
 
-  const monthlyRevenue = tenants.reduce((sum, t) => {
+  const monthlyRevenue = hosts.reduce((sum, t) => {
     const count = aptCounts[t.id] ?? 0;
     return sum + getMonthlyTotal(t.billing, count);
   }, 0);
 
-  const payingTenants = tenants.filter(
+  const payingHosts = hosts.filter(
     (t) => !t.billing?.unlocked && (aptCounts[t.id] ?? 0) > 0
   ).length;
-  const unlockedTenants = tenants.filter(
+  const unlockedHosts = hosts.filter(
     (t) => !!t.billing?.unlocked
   ).length;
 
-  const recentTenants = tenants.slice(0, 5);
+  const recentHosts = hosts.slice(0, 5);
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-      <p className="mt-1 text-sm text-gray-600">
-        Platform overview and management
-      </p>
+      <PageHeader title="Dashboard" />
 
       {error && (
         <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -82,7 +83,7 @@ export default function Dashboard() {
         >
           <p className="text-sm font-medium text-gray-500">Total Hosts</p>
           <p className="mt-2 text-3xl font-bold text-gray-900">
-            {loading ? "…" : tenantCount}
+            {loading ? "…" : hostCount}
           </p>
         </Link>
         <Link
@@ -113,32 +114,27 @@ export default function Dashboard() {
             Monthly Revenue
           </p>
           <p className="mt-2 text-3xl font-bold text-green-800">
-            {loading ? "…" : `CHF ${monthlyRevenue}`}
+            {loading ? "…" : formatMoney(monthlyRevenue, "CHF")}
           </p>
           {!loading && (
             <p className="mt-1 text-xs text-green-600">
-              {payingTenants} paying · {unlockedTenants} unlocked
+              {payingHosts} paying · {unlockedHosts} unlocked
             </p>
           )}
         </Link>
       </div>
 
-      {/* Recent Tenants */}
-      {recentTenants.length > 0 && (
+      {/* Recent Hosts */}
+      {recentHosts.length > 0 && (
         <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">
               Recent Hosts
             </h2>
-            <Link
-              to="/hosts"
-              className="text-sm font-medium text-amber-600 hover:text-amber-700"
-            >
-              View all →
-            </Link>
+            <Button variant="secondary" size="sm" onClick={() => navigate("/hosts")}>View all</Button>
           </div>
           <div className="mt-4 divide-y divide-gray-100">
-            {recentTenants.map((t) => {
+            {recentHosts.map((t) => {
               const count = aptCounts[t.id] ?? 0;
               const isUnlocked = !!t.billing?.unlocked;
               const total = getMonthlyTotal(t.billing, count);
@@ -165,7 +161,7 @@ export default function Dashboard() {
                       </span>
                     ) : (
                       <span className="text-sm font-medium text-gray-900">
-                        CHF {total}/mo
+                        {formatMoney(total, "CHF")}/mo
                       </span>
                     )}
                   </div>
@@ -180,24 +176,9 @@ export default function Dashboard() {
       <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
         <h2 className="text-lg font-semibold text-gray-900">Quick Actions</h2>
         <div className="mt-4 flex flex-wrap gap-3">
-          <Link
-            to="/hosts/new"
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-amber-400"
-          >
-            + Create Host
-          </Link>
-          <Link
-            to="/hosts"
-            className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
-          >
-            View Hosts
-          </Link>
-          <Link
-            to="/users"
-            className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
-          >
-            View Users
-          </Link>
+          <Button variant="primary" onClick={() => navigate("/hosts/new")}>+ Create Host</Button>
+          <Button variant="secondary" onClick={() => navigate("/hosts")}>View Hosts</Button>
+          <Button variant="secondary" onClick={() => navigate("/users")}>View Users</Button>
         </div>
       </div>
     </div>

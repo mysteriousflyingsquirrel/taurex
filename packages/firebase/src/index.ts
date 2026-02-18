@@ -13,6 +13,8 @@ export {
   DEFAULT_BILLING,
   getEffectivePrice,
   getMonthlyTotal,
+  currencySymbol,
+  formatMoney,
   formatDate,
 } from "./types";
 export type {

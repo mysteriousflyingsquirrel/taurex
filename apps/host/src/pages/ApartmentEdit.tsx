@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   fetchApartmentBySlug,
@@ -6,19 +6,19 @@ import {
   updateApartment,
   fetchSeasons,
   AVAILABLE_LANGUAGES,
+  currencySymbol,
+  formatMoney,
   type Apartment,
   type Season,
   type LanguageCode,
 } from "@taurex/firebase";
 import { useHost } from "../contexts/HostContext";
-import { useAutosave } from "../hooks/useAutosave";
 import AddressAutocomplete from "../components/AddressAutocomplete";
-import AutosaveIndicator from "../components/AutosaveIndicator";
-
-const currencySymbol = (code: string) => {
-  const map: Record<string, string> = { CHF: "CHF", EUR: "€", USD: "$", GBP: "£" };
-  return map[code] ?? code;
-};
+import Button from "../components/Button";
+import StickyFormFooter from "../components/StickyFormFooter";
+import DiscardChangesModal from "../components/DiscardChangesModal";
+import { useToast } from "../components/Toast";
+import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 
 function slugify(text: string): string {
   return text
@@ -59,11 +59,13 @@ export default function ApartmentEdit() {
   const isNew = slug === "new";
 
   const [form, setForm] = useState<Omit<Apartment, "id">>(() => emptyForm(languages));
+  const [savedForm, setSavedForm] = useState<Omit<Apartment, "id"> | null>(null);
   const [seasons, setSeasons] = useState<Record<string, Season>>({});
   const [loading, setLoading] = useState(!isNew);
-  const [created, setCreated] = useState(!isNew); // Only allow autosave after creation
   const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const toast = useToast();
   const [openSections, setOpenSections] = useState({
     basic: true,
     facts: true,
@@ -99,7 +101,9 @@ export default function ApartmentEdit() {
             if (descs[l] === undefined) descs[l] = "";
             if (amens[l] === undefined) amens[l] = [];
           }
-          setForm({ ...rest, descriptions: descs, amenities: amens });
+          const data = { ...rest, descriptions: descs, amenities: amens };
+          setForm(data);
+          setSavedForm(data);
         }
         setLoading(false);
       });
@@ -134,22 +138,30 @@ export default function ApartmentEdit() {
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Autosave (only for existing apartments)
-  const handleAutosave = useCallback(
-    async (data: Omit<Apartment, "id">) => {
-      if (!hostId || !slug || isNew) return;
-      const { slug: _slug, ...rest } = data;
-      await updateApartment(hostId, slug, rest);
-    },
-    [hostId, slug, isNew]
-  );
+  const isDirty =
+    savedForm !== null &&
+    JSON.stringify(form) !== JSON.stringify(savedForm);
+  const { showModal, confirmDiscard, cancelDiscard, guardedNavigate } =
+    useUnsavedChangesGuard(isDirty);
 
-  const { saving, saved, error: saveError } = useAutosave({
-    data: form,
-    onSave: handleAutosave,
-    enabled: created && !isNew,
-    delay: 1500,
-  });
+  const handleSaveApartment = useCallback(async () => {
+    if (!hostId || !slug || isNew || !isDirty) return;
+    setSaving(true);
+    try {
+      const { slug: _slug, ...rest } = form;
+      await updateApartment(hostId, slug, rest);
+      setSavedForm(form);
+      toast.success("Apartment saved.");
+    } catch {
+      toast.error("Saving failed.");
+    } finally {
+      setSaving(false);
+    }
+  }, [hostId, slug, isNew, isDirty, form, toast]);
+
+  const handleCancelEdit = useCallback(() => {
+    if (savedForm) setForm(savedForm);
+  }, [savedForm]);
 
   // Validate mandatory fields
   const validate = (): string[] => {
@@ -178,17 +190,17 @@ export default function ApartmentEdit() {
     setCreating(true);
     try {
       await createApartment(hostId, form);
-      setCreated(true);
+      toast.success("Apartment created.");
       navigate(`/apartments/${form.slug}`, { replace: true });
-    } catch (err) {
-      alert("Failed to create. " + (err instanceof Error ? err.message : ""));
+    } catch {
+      toast.error("Saving failed.");
     } finally {
       setCreating(false);
     }
   };
 
   const handleBack = () => {
-    navigate("/apartments");
+    guardedNavigate("/apartments");
   };
 
   if (loading) {
@@ -208,17 +220,13 @@ export default function ApartmentEdit() {
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button
-            onClick={handleBack}
-            className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
-          >
+          <Button variant="secondary" size="sm" onClick={handleBack}>
             ← Back
-          </button>
+          </Button>
           <h1 className="text-2xl font-bold text-gray-900">
             {isNew ? "New Apartment" : `Edit: ${form.name || form.slug}`}
           </h1>
         </div>
-        <AutosaveIndicator saving={saving} saved={saved} error={saveError} />
       </div>
 
       {/* Validation errors */}
@@ -473,7 +481,7 @@ export default function ApartmentEdit() {
                   setNewLinkLabel("");
                   setNewLinkUrl("");
                 }}
-                className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                className="inline-flex h-9 items-center rounded-lg border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
               >
                 + Add Link
               </button>
@@ -551,7 +559,7 @@ export default function ApartmentEdit() {
                   update("icalUrls", [...form.icalUrls, newIcalUrl.trim()]);
                   setNewIcalUrl("");
                 }}
-                className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                className="inline-flex h-9 items-center rounded-lg border border-gray-300 bg-white px-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
               >
                 + Add URL
               </button>
@@ -634,15 +642,10 @@ export default function ApartmentEdit() {
           </div>
 
           {yearSeasons.length === 0 ? (
-            <p className="mt-4 text-sm text-gray-400">
-              No seasons configured for {currentYear}.{" "}
-              <a
-                href="/seasons"
-                className="text-indigo-600 hover:text-indigo-700"
-              >
-                Create seasons →
-              </a>
-            </p>
+            <div className="mt-4 flex items-center gap-2 text-sm text-gray-400">
+              <span>No seasons configured for {currentYear}.</span>
+              <Button variant="secondary" size="sm" onClick={() => navigate("/seasons")}>Create seasons</Button>
+            </div>
           ) : (
             <div className="mt-4">
               <p className="text-sm text-gray-500">
@@ -674,7 +677,7 @@ export default function ApartmentEdit() {
                       }}
                       placeholder={
                         form.priceDefault
-                          ? `default: ${form.priceDefault}`
+                          ? `default: ${formatMoney(form.priceDefault, baseCurrency)}`
                           : currencySymbol(baseCurrency)
                       }
                       className="w-28 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
@@ -715,15 +718,10 @@ export default function ApartmentEdit() {
           </div>
 
           {yearSeasons.length === 0 ? (
-            <p className="mt-4 text-sm text-gray-400">
-              No seasons configured for {currentYear}.{" "}
-              <a
-                href="/seasons"
-                className="text-indigo-600 hover:text-indigo-700"
-              >
-                Create seasons →
-              </a>
-            </p>
+            <div className="mt-4 flex items-center gap-2 text-sm text-gray-400">
+              <span>No seasons configured for {currentYear}.</span>
+              <Button variant="secondary" size="sm" onClick={() => navigate("/seasons")}>Create seasons</Button>
+            </div>
           ) : (
             <div className="mt-4">
               <p className="text-sm text-gray-500">
@@ -768,26 +766,42 @@ export default function ApartmentEdit() {
         </SectionCard>
       </div>
 
-      {/* Sticky bottom bar — only for new apartment creation */}
-      {isNew && (
-        <div className="fixed bottom-0 left-64 right-0 border-t border-gray-200 bg-white px-8 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={handleBack}
-              className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
-            >
-              Cancel
-            </button>
-            <button
+      <StickyFormFooter
+        dirty={isDirty}
+        left={
+          <Button
+            variant="secondary"
+            onClick={isNew ? handleBack : handleCancelEdit}
+          >
+            Cancel
+          </Button>
+        }
+        right={
+          isNew ? (
+            <Button
+              variant="primary"
+              loading={creating}
               onClick={handleCreate}
-              disabled={creating}
-              className="rounded-lg bg-indigo-600 px-6 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-40"
             >
-              {creating ? "Creating…" : "Create Apartment"}
-            </button>
-          </div>
-        </div>
-      )}
+              Create apartment
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              loading={saving}
+              disabled={!isDirty}
+              onClick={handleSaveApartment}
+            >
+              Save apartment
+            </Button>
+          )
+        }
+      />
+      <DiscardChangesModal
+        open={showModal}
+        onCancel={cancelDiscard}
+        onDiscard={confirmDiscard}
+      />
     </div>
   );
 }

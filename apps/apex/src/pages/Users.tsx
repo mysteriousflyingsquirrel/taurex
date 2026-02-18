@@ -8,16 +8,18 @@ import {
   type UserProfile,
   type Host,
 } from "@taurex/firebase";
+import PageHeader from "../components/PageHeader";
+import Button from "../components/Button";
+import { useToast } from "../components/Toast";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 
 export default function Users() {
+  const toast = useToast();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [hosts, setHosts] = useState<Record<string, Host>>({});
   const [hostList, setHostList] = useState<Host[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-
   const [deleteTarget, setDeleteTarget] = useState<UserProfile | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -50,7 +52,7 @@ export default function Users() {
       setUsers((prev) => prev.filter((u) => u.uid !== deleteTarget.uid));
       setDeleteTarget(null);
     } catch {
-      alert("Failed to delete user profile.");
+      toast.error("Failed to delete user profile.");
     } finally {
       setDeleting(false);
     }
@@ -61,31 +63,16 @@ export default function Users() {
     setShowCreate(false);
   };
 
-  const filtered = users.filter(
-    (u) =>
-      u.uid.toLowerCase().includes(search.toLowerCase()) ||
-      u.hostId.toLowerCase().includes(search.toLowerCase()) ||
-      (hosts[u.hostId]?.name ?? "")
-        .toLowerCase()
-        .includes(search.toLowerCase())
-  );
-
   return (
     <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Users</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            All user profiles on the platform
-          </p>
-        </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-amber-400"
-        >
-          + Create User
-        </button>
-      </div>
+      <PageHeader
+        title="Users"
+        action={
+          <Button variant="primary" onClick={() => setShowCreate(true)}>
+            + Create user
+          </Button>
+        }
+      />
 
       {error && (
         <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -93,61 +80,78 @@ export default function Users() {
         </div>
       )}
 
-      <div className="mt-6">
-        <input
-          type="text"
-          placeholder="Search by UID or host…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-sm rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
-        />
-      </div>
-
       {loading ? (
         <p className="mt-8 text-sm text-gray-500">Loading users…</p>
-      ) : filtered.length === 0 ? (
-        <p className="mt-8 text-sm text-gray-500">
-          {search ? "No users match your search." : "No user profiles yet."}
-        </p>
+      ) : users.length === 0 ? (
+        <p className="mt-8 text-sm text-gray-500">No user profiles yet.</p>
       ) : (
-        <div className="mt-6 overflow-hidden rounded-xl border border-gray-200 bg-white">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="px-6 py-3 font-medium text-gray-500">UID</th>
-                <th className="px-6 py-3 font-medium text-gray-500">Host</th>
-                <th className="px-6 py-3 font-medium text-gray-500">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filtered.map((user) => (
-                <tr key={user.uid} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <code className="text-xs text-gray-600">{user.uid}</code>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-gray-900">
-                      {hosts[user.hostId]?.name ?? user.hostId}
-                    </span>
-                    <code className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
-                      {user.hostId}
-                    </code>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => setDeleteTarget(user)}
-                      className="text-sm font-medium text-red-600 hover:text-red-700"
-                    >
-                      Delete
-                    </button>
-                  </td>
+        <>
+          <div className="mt-6 hidden overflow-hidden rounded-xl border border-gray-200 bg-white md:block">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50">
+                  <th className="px-6 py-3 font-medium text-gray-500">UID</th>
+                  <th className="px-6 py-3 font-medium text-gray-500">Host</th>
+                  <th className="px-6 py-3 font-medium text-gray-500">
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {users.map((user) => (
+                  <tr key={user.uid} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <code className="text-xs text-gray-600">{user.uid}</code>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-gray-900">
+                        {hosts[user.hostId]?.name ?? user.hostId}
+                      </span>
+                      <code className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
+                        {user.hostId}
+                      </code>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setDeleteTarget(user)}
+                      >
+                        Delete
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-6 space-y-3 md:hidden">
+            {users.map((user) => (
+              <div
+                key={user.uid}
+                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+              >
+                <p className="font-medium text-gray-900">
+                  <code className="text-xs text-gray-600">{user.uid}</code>
+                </p>
+                <p className="mt-1 text-sm text-gray-600">
+                  {hosts[user.hostId]?.name ?? user.hostId}
+                  <code className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
+                    {user.hostId}
+                  </code>
+                </p>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setDeleteTarget(user)}
+                >
+                  Delete
+                </Button>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {deleteTarget && (
@@ -291,21 +295,22 @@ function CreateUserModal({
         </div>
 
         <div className="mt-6 flex justify-end gap-3">
-          <button
+          <Button
+            variant="secondary"
             type="button"
             onClick={onCancel}
             disabled={saving}
-            className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
             type="submit"
             disabled={saving || hosts.length === 0}
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-amber-400 disabled:opacity-50"
+            loading={saving}
           >
             {saving ? "Creating…" : "Create User"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

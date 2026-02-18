@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, Outlet } from "react-router-dom";
+import { useParams, useNavigate, Link, Outlet } from "react-router-dom";
 import {
   fetchHostBySlug,
   fetchApartments,
@@ -8,11 +8,15 @@ import {
   type Apartment,
 } from "@taurex/firebase";
 import { ManagedHostProvider } from "../contexts/ManagedHostContext";
+import Button from "../components/Button";
+import { useToast } from "../components/Toast";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 
 export default function HostViewLayout() {
   const { hostId } = useParams<{ hostId: string }>();
-  const [tenant, setTenant] = useState<Host | null>(null);
+  const navigate = useNavigate();
+  const toast = useToast();
+  const [host, setHost] = useState<Host | null>(null);
   const [apartments, setApartments] = useState<Apartment[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -28,7 +32,7 @@ export default function HostViewLayout() {
           setLoading(false);
           return;
         }
-        setTenant(t);
+        setHost(t);
         const apts = await fetchApartments(t.id);
         setApartments(apts);
         setLoading(false);
@@ -46,7 +50,7 @@ export default function HostViewLayout() {
       await deleteHost(hostId);
       window.location.href = "/hosts";
     } catch {
-      alert("Failed to delete host.");
+      toast.error("Failed to delete host.");
     } finally {
       setDeleting(false);
     }
@@ -61,49 +65,45 @@ export default function HostViewLayout() {
     );
   }
 
-  if (notFound || !tenant) {
+  if (notFound || !host) {
     return (
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Host Not Found</h1>
         <p className="mt-2 text-sm text-gray-500">
           The host "{hostId}" does not exist.
         </p>
-        <Link
-          to="/hosts"
-          className="mt-4 inline-block text-sm font-medium text-amber-600 hover:text-amber-700"
-        >
-          ← Back to Hosts
-        </Link>
+        <div className="mt-4">
+          <Button variant="secondary" size="sm" onClick={() => navigate("/hosts")}>← Back to Hosts</Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <ManagedHostProvider tenant={tenant} apartments={apartments} readonly>
-      {/* Header */}
+    <ManagedHostProvider tenant={host} apartments={apartments} readonly>
       <div className="mb-6">
         <nav className="flex items-center gap-2 text-sm text-gray-500">
           <Link to="/hosts" className="hover:text-amber-600">
             Hosts
           </Link>
           <span>›</span>
-          <span className="text-gray-900">{tenant.name}</span>
+          <span className="text-gray-900">{host.name}</span>
         </nav>
         <div className="mt-4 flex items-start justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">{tenant.name}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{host.name}</h1>
           <div className="flex items-center gap-2">
-            <Link
-              to={`/hosts/${tenant.id}/edit`}
-              className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-amber-400"
+            <Button
+              variant="primary"
+              onClick={() => navigate(`/hosts/${host.id}/edit`)}
             >
               Edit Host
-            </Link>
-            <button
+            </Button>
+            <Button
+              variant="destructive"
               onClick={() => setDeleteOpen(true)}
-              className="rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
             >
               Delete
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -112,8 +112,8 @@ export default function HostViewLayout() {
       <ConfirmDeleteModal
         open={deleteOpen}
         title="Delete Host"
-        description={`This will permanently delete host "${tenant.name}" and all associated data. This action cannot be undone.`}
-        confirmPhrase={`delete ${tenant.slug}`}
+        description={`This will permanently delete host "${host.name}" and all associated data. This action cannot be undone.`}
+        confirmPhrase={`delete ${host.slug}`}
         buttonLabel="Delete Host"
         onConfirm={handleDelete}
         onCancel={() => setDeleteOpen(false)}

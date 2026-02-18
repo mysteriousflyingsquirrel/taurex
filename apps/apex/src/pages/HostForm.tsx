@@ -9,6 +9,11 @@ import {
   type LanguageCode,
   type CurrencyCode,
 } from "@taurex/firebase";
+import Button from "../components/Button";
+import StickyFormFooter from "../components/StickyFormFooter";
+import DiscardChangesModal from "../components/DiscardChangesModal";
+import { useDirtyForm } from "../hooks/useDirtyForm";
+import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 
 function slugify(text: string): string {
   return text
@@ -29,6 +34,18 @@ export default function HostForm() {
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [savedForm, setSavedForm] = useState<{
+    name: string;
+    slug: string;
+    languages: LanguageCode[];
+    baseCurrency: CurrencyCode;
+  } | null>(null);
+
+  const currentForm = { name, slug, languages, baseCurrency };
+  const initialForm = { name: "", slug: "", languages: ["en"] as LanguageCode[], baseCurrency: "CHF" as CurrencyCode };
+  const isDirty = useDirtyForm(currentForm, savedForm ?? initialForm);
+  const { showModal, confirmDiscard, cancelDiscard, guardedNavigate } =
+    useUnsavedChangesGuard(isDirty);
 
   // Load existing host when editing
   useEffect(() => {
@@ -43,6 +60,7 @@ export default function HostForm() {
       setSlug(t.slug);
       setLanguages(t.languages);
       setBaseCurrency(t.baseCurrency);
+      setSavedForm({ name: t.name, slug: t.slug, languages: t.languages, baseCurrency: t.baseCurrency });
       setLoading(false);
     });
   }, [hostId]);
@@ -81,6 +99,7 @@ export default function HostForm() {
           languages,
           baseCurrency,
         });
+        setSavedForm({ name: name.trim(), slug, languages, baseCurrency });
       } else {
         // Check if slug already exists
         const existing = await fetchHostBySlug(finalSlug);
@@ -96,6 +115,7 @@ export default function HostForm() {
           baseCurrency,
         });
       }
+      setSavedForm({ name: name.trim(), slug: finalSlug, languages, baseCurrency });
       navigate("/hosts");
     } catch {
       setError("Failed to save host. Please try again.");
@@ -116,7 +136,13 @@ export default function HostForm() {
   }
 
   return (
-    <div>
+    <div className="pb-24">
+      <DiscardChangesModal
+        open={showModal}
+        onCancel={cancelDiscard}
+        onDiscard={confirmDiscard}
+      />
+
       <h1 className="text-2xl font-bold text-gray-900">
         {isEdit ? "Edit Host" : "Create Host"}
       </h1>
@@ -127,6 +153,7 @@ export default function HostForm() {
       </p>
 
       <form
+        id="host-form"
         onSubmit={handleSubmit}
         className="mt-8 max-w-2xl space-y-6 rounded-xl border border-gray-200 bg-white p-6"
       >
@@ -194,18 +221,15 @@ export default function HostForm() {
             {AVAILABLE_LANGUAGES.map((lang) => {
               const active = languages.includes(lang.code);
               return (
-                <button
+                <Button
                   key={lang.code}
+                  variant="secondary"
+                  size="sm"
                   type="button"
                   onClick={() => toggleLanguage(lang.code)}
-                  className={`rounded-lg border-2 px-4 py-2 text-sm font-medium transition ${
-                    active
-                      ? "border-amber-500 bg-amber-50 text-amber-700"
-                      : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
-                  }`}
                 >
                   {lang.label}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -218,44 +242,45 @@ export default function HostForm() {
           </label>
           <div className="mt-2 flex flex-wrap gap-2">
             {AVAILABLE_CURRENCIES.map((cur) => (
-              <button
+              <Button
                 key={cur.code}
+                variant="secondary"
+                size="sm"
                 type="button"
                 onClick={() => setBaseCurrency(cur.code)}
-                className={`rounded-lg border-2 px-4 py-2 text-sm font-medium transition ${
-                  baseCurrency === cur.code
-                    ? "border-amber-500 bg-amber-50 text-amber-700"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
-                }`}
               >
                 {cur.symbol} {cur.label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-3 border-t border-gray-100 pt-6">
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-lg bg-amber-500 px-6 py-2.5 text-sm font-semibold text-gray-900 hover:bg-amber-400 disabled:opacity-50"
-          >
-            {saving
-              ? "Saving…"
-              : isEdit
-                ? "Update Host"
-                : "Create Host"}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/hosts")}
-            className="rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
-          >
-            Cancel
-          </button>
-        </div>
       </form>
+
+      <StickyFormFooter
+        dirty={isDirty}
+        left={null}
+        right={
+          <>
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => (isDirty ? guardedNavigate("/hosts") : navigate("/hosts"))}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              form="host-form"
+              disabled={saving}
+              loading={saving}
+            >
+              {saving ? "Saving…" : isEdit ? "Update Host" : "Create Host"}
+            </Button>
+          </>
+        }
+      />
     </div>
   );
 }

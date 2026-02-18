@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { initFirebase } from "@taurex/firebase";
 import { AuthProvider } from "./contexts/AuthContext";
 import { HostProvider } from "./contexts/HostContext";
+import { ToastProvider } from "./components/Toast";
 import App from "./App";
 import "./index.css";
 
@@ -20,11 +21,13 @@ initFirebase({
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <HostProvider>
-          <App />
-        </HostProvider>
-      </AuthProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <HostProvider>
+            <App />
+          </HostProvider>
+        </AuthProvider>
+      </ToastProvider>
     </BrowserRouter>
   </StrictMode>,
 );

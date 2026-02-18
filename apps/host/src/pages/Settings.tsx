@@ -6,12 +6,17 @@ import {
   AVAILABLE_CURRENCIES,
   getEffectivePrice,
   getMonthlyTotal,
+  formatMoney,
   type LanguageCode,
   type CurrencyCode,
 } from "@taurex/firebase";
 import { useHost } from "../contexts/HostContext";
-import { useAutosave } from "../hooks/useAutosave";
-import AutosaveIndicator from "../components/AutosaveIndicator";
+import PageHeader from "../components/PageHeader";
+import Button from "../components/Button";
+import StickyFormFooter from "../components/StickyFormFooter";
+import DiscardChangesModal from "../components/DiscardChangesModal";
+import { useToast } from "../components/Toast";
+import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 
 interface SettingsData {
   languages: LanguageCode[];
@@ -26,11 +31,19 @@ export default function Settings() {
     languages,
     baseCurrency,
   });
+  const [savedSettings, setSavedSettings] = useState<SettingsData>({
+    languages,
+    baseCurrency,
+  });
   const [apartmentCount, setApartmentCount] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const toast = useToast();
 
-  // Sync when tenant data loads
+  // Sync when host data loads
   useEffect(() => {
-    setSettings({ languages, baseCurrency });
+    const next = { languages, baseCurrency };
+    setSettings(next);
+    setSavedSettings(next);
   }, [languages, baseCurrency]);
 
   // Fetch apartment count for billing display
@@ -39,24 +52,35 @@ export default function Settings() {
     fetchApartments(hostId).then((apts) => setApartmentCount(apts.length));
   }, [hostId]);
 
+  const isDirty =
+    JSON.stringify(settings) !== JSON.stringify(savedSettings);
+  const { showModal, confirmDiscard, cancelDiscard } =
+    useUnsavedChangesGuard(isDirty);
+
   const handleSave = useCallback(
-    async (data: SettingsData) => {
-      if (!hostId) return;
-      await updateHost(hostId, {
-        languages: data.languages,
-        baseCurrency: data.baseCurrency,
-      });
-      await refreshHost();
+    async () => {
+      if (!hostId || !isDirty) return;
+      setSaving(true);
+      try {
+        await updateHost(hostId, {
+          languages: settings.languages,
+          baseCurrency: settings.baseCurrency,
+        });
+        await refreshHost();
+        setSavedSettings(settings);
+        toast.success("Settings saved.");
+      } catch {
+        toast.error("Saving failed.");
+      } finally {
+        setSaving(false);
+      }
     },
-    [hostId, refreshHost]
+    [hostId, isDirty, settings, refreshHost, toast]
   );
 
-  const { saving, saved, error } = useAutosave({
-    data: settings,
-    onSave: handleSave,
-    enabled: !!hostId,
-    delay: 1000,
-  });
+  const handleCancel = useCallback(() => {
+    setSettings(savedSettings);
+  }, [savedSettings]);
 
   const toggleLanguage = (code: LanguageCode) => {
     setSettings((prev) => {
@@ -79,16 +103,8 @@ export default function Settings() {
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Manage your host configuration.
-          </p>
-        </div>
-        <AutosaveIndicator saving={saving} saved={saved} error={error} />
-      </div>
+    <div className="pb-24">
+      <PageHeader title="Settings" />
 
       {/* Host Info */}
       <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6">
@@ -123,15 +139,15 @@ export default function Settings() {
           <div className="mt-3">
             <div className="flex items-baseline gap-1">
               <span className="text-2xl font-bold text-gray-900">
-                CHF {getEffectivePrice(host?.billing)}
+                {formatMoney(getEffectivePrice(host?.billing), baseCurrency)}
               </span>
               <span className="text-sm text-gray-500">
                 / apartment / month
               </span>
             </div>
             <p className="mt-2 text-sm text-gray-600">
-              {apartmentCount} apartment{apartmentCount !== 1 ? "s" : ""} · CHF{" "}
-              {getMonthlyTotal(host?.billing, apartmentCount)} / month total
+              {apartmentCount} apartment{apartmentCount !== 1 ? "s" : ""} ·{" "}
+              {formatMoney(getMonthlyTotal(host?.billing, apartmentCount), baseCurrency)} / month total
             </p>
           </div>
         )}
@@ -221,6 +237,30 @@ export default function Settings() {
           })}
         </div>
       </div>
+
+      <StickyFormFooter
+        dirty={isDirty}
+        left={
+          <Button variant="secondary" onClick={handleCancel}>
+            Cancel
+          </Button>
+        }
+        right={
+          <Button
+            variant="primary"
+            loading={saving}
+            disabled={!isDirty}
+            onClick={handleSave}
+          >
+            Save settings
+          </Button>
+        }
+      />
+      <DiscardChangesModal
+        open={showModal}
+        onCancel={cancelDiscard}
+        onDiscard={confirmDiscard}
+      />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import { formatDate } from "../lib/i18n";
+import { formatDate } from "@taurex/firebase";
 
 interface DateRangePickerProps {
   checkIn: string;

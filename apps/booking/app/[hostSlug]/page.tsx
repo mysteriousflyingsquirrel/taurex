@@ -4,11 +4,12 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import "../../lib/firebase";
-import { fetchHostBySlug, fetchApartments, type Host, type Apartment } from "@taurex/firebase";
+import { fetchHostBySlug, fetchApartments, formatMoney, type Host, type Apartment, type CurrencyCode } from "@taurex/firebase";
 import HostHeader from "../../components/HostHeader";
 import AvailabilityBar from "../../components/AvailabilityBar";
 import ImageCarousel from "../../components/ImageCarousel";
-import { t, getLang, currencySymbol } from "../../lib/i18n";
+import Map, { type MapPin } from "../../components/Map";
+import { t, getLang } from "../../lib/i18n";
 
 export default function HostPage() {
   const params = useParams<{ hostSlug: string }>();
@@ -91,7 +92,7 @@ export default function HostPage() {
     );
   }
 
-  const currency = currencySymbol[host.baseCurrency] ?? host.baseCurrency ?? "CHF";
+  const cur = (host.baseCurrency ?? "CHF") as CurrencyCode;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -113,7 +114,7 @@ export default function HostPage() {
                   <ImageCarousel images={apt.images ?? []} height="h-56" emptyText={t(lang, "apartment.noImages")} />
                   {apt.priceDefault > 0 && (
                     <div className="absolute right-3 top-3 rounded-lg bg-gray-900/80 px-3 py-1.5 text-sm font-semibold text-white backdrop-blur-sm">
-                      {currency} {apt.priceDefault} <span className="text-xs font-normal text-gray-300">{t(lang, "apartment.perNight")}</span>
+                      {formatMoney(apt.priceDefault, cur)} <span className="text-xs font-normal text-gray-300">{t(lang, "apartment.perNight")}</span>
                     </div>
                   )}
                 </div>
@@ -132,6 +133,25 @@ export default function HostPage() {
             ))}
           </div>
         )}
+        {(() => {
+          const pins: MapPin[] = filteredApartments
+            .filter((apt) => apt.location?.lat && apt.location?.lng)
+            .map((apt) => ({
+              lat: apt.location.lat,
+              lng: apt.location.lng,
+              label: apt.name,
+              href: `/${host.slug}/${apt.slug}?${searchParams.toString()}`,
+            }));
+          if (pins.length === 0) return null;
+          return (
+            <div className="mt-12">
+              <h2 className="text-lg font-semibold text-gray-900">{t(lang, "apartments.map")}</h2>
+              <div className="mt-3">
+                <Map pins={pins} className="h-80 w-full md:h-96" />
+              </div>
+            </div>
+          );
+        })()}
       </main>
     </div>
   );

@@ -8,12 +8,16 @@ import {
   fetchHostBySlug,
   fetchApartmentBySlug,
   fetchApartments,
+  formatMoney,
+  formatDate,
   type Host,
   type Apartment,
+  type CurrencyCode,
 } from "@taurex/firebase";
 import HostHeader from "../../../components/HostHeader";
 import ImageCarousel from "../../../components/ImageCarousel";
-import { t, getLang, currencySymbol, formatDate } from "../../../lib/i18n";
+import Map from "../../../components/Map";
+import { t, getLang } from "../../../lib/i18n";
 
 export default function ApartmentPage() {
   const { hostSlug, apartmentSlug } = useParams<{ hostSlug: string; apartmentSlug: string }>();
@@ -78,7 +82,7 @@ export default function ApartmentPage() {
     );
   }
 
-  const currency = currencySymbol[host.baseCurrency] ?? host.baseCurrency ?? "CHF";
+  const cur = (host.baseCurrency ?? "CHF") as CurrencyCode;
   const description = apartment.descriptions?.[lang] ?? apartment.descriptions?.en ?? "";
   const amenities = apartment.amenities?.[lang] ?? apartment.amenities?.en ?? [];
   const minStay = apartment.minStayDefault ?? 1;
@@ -113,7 +117,7 @@ export default function ApartmentPage() {
           <ImageCarousel images={apartment.images ?? []} height="h-64 md:h-80 lg:h-[500px]" emptyText={t(lang, "apartment.noImages")} />
           {apartment.priceDefault > 0 && (
             <div className="absolute left-4 top-4 z-10 rounded-lg bg-indigo-600 px-4 py-2 text-white shadow-lg">
-              <span className="text-lg font-bold">{currency} {apartment.priceDefault}</span>
+              <span className="text-lg font-bold">{formatMoney(apartment.priceDefault, cur)}</span>
               <span className="ml-1 text-sm font-normal opacity-80">{t(lang, "apartment.perNight")}</span>
             </div>
           )}
@@ -129,6 +133,21 @@ export default function ApartmentPage() {
             <h2 className="text-lg font-semibold text-gray-900">{t(lang, "apartment.amenities")}</h2>
             <div className="mt-3 flex flex-wrap gap-3">
               {amenities.map((amenity, i) => (<div key={i} className="rounded-lg bg-white px-4 py-2.5 text-sm text-gray-700">{amenity}</div>))}
+            </div>
+          </div>
+        )}
+        {apartment.location?.lat && apartment.location?.lng && (
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold text-gray-900">{t(lang, "apartment.location")}</h2>
+            {apartment.location.address && (
+              <p className="mt-2 text-sm text-gray-600">{apartment.location.address}</p>
+            )}
+            <div className="mt-3">
+              <Map
+                pins={[{ lat: apartment.location.lat, lng: apartment.location.lng, label: apartment.name }]}
+                zoom={14}
+                className="h-72 w-full md:h-80"
+              />
             </div>
           </div>
         )}
@@ -157,7 +176,7 @@ export default function ApartmentPage() {
               )}
               {hasDates && nightsCount > 0 && apartment.priceDefault > 0 && (
                 <div className="mt-4 rounded-lg bg-gray-50 px-4 py-3">
-                  <p className="text-lg font-semibold text-gray-900">{t(lang, "apartment.approxTotal", { currency, total: (nightsCount * apartment.priceDefault).toLocaleString() })}</p>
+                  <p className="text-lg font-semibold text-gray-900">{t(lang, "apartment.approxTotal", { total: formatMoney(nightsCount * apartment.priceDefault, cur) })}</p>
                   <p className="mt-1 text-xs text-gray-500">{t(lang, "apartment.approxDisclaimer")}</p>
                 </div>
               )}
@@ -194,11 +213,6 @@ export default function ApartmentPage() {
           </div>
         )}
       </main>
-      <footer className="mt-16 border-t border-gray-200 bg-white py-8">
-        <div className="mx-auto max-w-7xl px-6 text-center">
-          <p className="text-sm text-gray-400">Powered by{" "}<a href="https://taurex.one" className="font-medium text-indigo-600 hover:text-indigo-700">Taurex</a></p>
-        </div>
-      </footer>
     </div>
   );
 }

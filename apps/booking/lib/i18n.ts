@@ -11,6 +11,7 @@ const translations: Record<string, Record<string, string>> = {
     "apartments.title": "Our Apartments",
     "apartments.empty": "No apartments available.",
     "apartments.emptyFiltered": "No apartments match your filter.",
+    "apartments.map": "Map",
     "apartment.perNight": "/ night",
     "apartment.guests": "Guests",
     "apartment.bedrooms": "Bedrooms",
@@ -35,7 +36,7 @@ const translations: Record<string, Record<string, string>> = {
     "apartment.bestPriceTitle": "Best price guaranteed!",
     "apartment.bestPriceDesc": "Book directly through our booking request and get the cheapest price available.",
     "apartment.nightsSelected": "{nights} nights selected",
-    "apartment.approxTotal": "Approx. total: {currency} {total}",
+    "apartment.approxTotal": "Approx. total: {total}",
     "apartment.approxDisclaimer": "Approximate estimate. Final price at the discretion of the host.",
     "notFound.host": "Host not found",
     "notFound.apartment": "Apartment not found",
@@ -54,6 +55,7 @@ const translations: Record<string, Record<string, string>> = {
     "apartments.title": "Unsere Apartments",
     "apartments.empty": "Keine Apartments verfügbar.",
     "apartments.emptyFiltered": "Keine Apartments für Ihre Auswahl gefunden.",
+    "apartments.map": "Karte",
     "apartment.perNight": "/ Nacht",
     "apartment.guests": "Gäste",
     "apartment.bedrooms": "Schlafzimmer",
@@ -78,7 +80,7 @@ const translations: Record<string, Record<string, string>> = {
     "apartment.bestPriceTitle": "Bestpreis garantiert!",
     "apartment.bestPriceDesc": "Buchen Sie direkt über unsere Buchungsanfrage und erhalten Sie den günstigsten Preis.",
     "apartment.nightsSelected": "{nights} Nächte ausgewählt",
-    "apartment.approxTotal": "Ca. Gesamtpreis: {currency} {total}",
+    "apartment.approxTotal": "Ca. Gesamtpreis: {total}",
     "apartment.approxDisclaimer": "Ungefähre Schätzung. Endpreis nach Ermessen des Gastgebers.",
     "notFound.host": "Gastgeber nicht gefunden",
     "notFound.apartment": "Apartment nicht gefunden",
@@ -97,6 +99,7 @@ const translations: Record<string, Record<string, string>> = {
     "apartments.title": "Nos appartements",
     "apartments.empty": "Aucun appartement disponible.",
     "apartments.emptyFiltered": "Aucun appartement ne correspond à votre filtre.",
+    "apartments.map": "Carte",
     "apartment.perNight": "/ nuit",
     "apartment.guests": "Voyageurs",
     "apartment.bedrooms": "Chambres",
@@ -121,7 +124,7 @@ const translations: Record<string, Record<string, string>> = {
     "apartment.bestPriceTitle": "Meilleur prix garanti !",
     "apartment.bestPriceDesc": "Réservez directement via notre demande de réservation et obtenez le prix le plus avantageux.",
     "apartment.nightsSelected": "{nights} nuits sélectionnées",
-    "apartment.approxTotal": "Total approx. : {currency} {total}",
+    "apartment.approxTotal": "Total approx. : {total}",
     "apartment.approxDisclaimer": "Estimation approximative. Le prix final est à la discrétion de l'hôte.",
     "notFound.host": "Hôte introuvable",
     "notFound.apartment": "Appartement introuvable",
@@ -140,6 +143,7 @@ const translations: Record<string, Record<string, string>> = {
     "apartments.title": "I nostri appartamenti",
     "apartments.empty": "Nessun appartamento disponibile.",
     "apartments.emptyFiltered": "Nessun appartamento corrisponde al filtro.",
+    "apartments.map": "Mappa",
     "apartment.perNight": "/ notte",
     "apartment.guests": "Ospiti",
     "apartment.bedrooms": "Camere",
@@ -164,7 +168,7 @@ const translations: Record<string, Record<string, string>> = {
     "apartment.bestPriceTitle": "Miglior prezzo garantito!",
     "apartment.bestPriceDesc": "Prenota direttamente tramite la nostra richiesta di prenotazione e ottieni il prezzo più conveniente.",
     "apartment.nightsSelected": "{nights} notti selezionate",
-    "apartment.approxTotal": "Totale appross.: {currency} {total}",
+    "apartment.approxTotal": "Totale appross.: {total}",
     "apartment.approxDisclaimer": "Stima approssimativa. Il prezzo finale è a discrezione dell'host.",
     "notFound.host": "Proprietario non trovato",
     "notFound.apartment": "Appartamento non trovato",
@@ -187,17 +191,3 @@ export function getLang(langParam: string | null, hostLanguages: string[]): stri
   return hostLanguages[0] ?? "en";
 }
 
-export const currencySymbol: Record<string, string> = {
-  CHF: "CHF",
-  EUR: "€",
-  USD: "$",
-  GBP: "£",
-};
-
-export function formatDate(dateStr: string): string {
-  if (!dateStr) return "";
-  const parts = dateStr.split("-");
-  if (parts.length !== 3) return dateStr;
-  const [y, m, d] = parts;
-  return `${d}.${m}.${y}`;
-}

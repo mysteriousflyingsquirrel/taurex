@@ -127,7 +127,26 @@ export type Season = {
   dateRanges: SeasonDateRange[];
 };
 
-// Date formatting
+// Formatting helpers
+
+/** Resolve a CurrencyCode to its display symbol */
+export function currencySymbol(code: CurrencyCode): string {
+  const entry = AVAILABLE_CURRENCIES.find((c) => c.code === code);
+  return entry?.symbol ?? code;
+}
+
+/**
+ * Format a monetary amount: "CHF 1'000.00"
+ * Apostrophe thousands separator, always 2 decimals.
+ */
+export function formatMoney(amount: number, code: CurrencyCode): string {
+  const symbol = currencySymbol(code);
+  const fixed = Math.abs(amount).toFixed(2);
+  const [whole, decimal] = fixed.split(".");
+  const withSep = whole.replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  const sign = amount < 0 ? "-" : "";
+  return `${symbol} ${sign}${withSep}.${decimal}`;
+}
 
 /** Format a YYYY-MM-DD date string as dd.mm.yyyy */
 export function formatDate(dateStr: string): string {

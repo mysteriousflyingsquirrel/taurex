@@ -6,24 +6,20 @@ import {
   updateApartment,
   fetchSeasons,
   AVAILABLE_LANGUAGES,
+  currencySymbol,
+  formatMoney,
   type Apartment,
   type Season,
   type LanguageCode,
 } from "@taurex/firebase";
 import { useManagedHost } from "../contexts/ManagedHostContext";
-import { useAutosave } from "../hooks/useAutosave";
 import AddressAutocomplete from "../components/AddressAutocomplete";
-import AutosaveIndicator from "../components/AutosaveIndicator";
-
-const currencySymbol = (code: string) => {
-  const map: Record<string, string> = {
-    CHF: "CHF",
-    EUR: "€",
-    USD: "$",
-    GBP: "£",
-  };
-  return map[code] ?? code;
-};
+import { useToast } from "../components/Toast";
+import Button from "../components/Button";
+import StickyFormFooter from "../components/StickyFormFooter";
+import DiscardChangesModal from "../components/DiscardChangesModal";
+import { useDirtyForm } from "../hooks/useDirtyForm";
+import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 
 function slugify(text: string): string {
   return text
@@ -77,6 +73,7 @@ export default function ApexApartmentEdit() {
   const [form, setForm] = useState<Omit<Apartment, "id">>(() =>
     emptyForm(languages)
   );
+  const [savedForm, setSavedForm] = useState<Omit<Apartment, "id"> | null>(null);
   const [seasons, setSeasons] = useState<Record<string, Season>>({});
   const [loading, setLoading] = useState(!isNew);
   const [created, setCreated] = useState(!isNew);
@@ -113,7 +110,9 @@ export default function ApexApartmentEdit() {
             if (descs[l] === undefined) descs[l] = "";
             if (amens[l] === undefined) amens[l] = [];
           }
-          setForm({ ...rest, descriptions: descs, amenities: amens });
+          const initial = { ...rest, descriptions: descs, amenities: amens };
+          setForm(initial);
+          setSavedForm(initial);
         }
         setLoading(false);
       });
@@ -147,21 +146,28 @@ export default function ApexApartmentEdit() {
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleAutosave = useCallback(
-    async (data: Omit<Apartment, "id">) => {
-      if (!hostId || !slug || isNew) return;
-      const { slug: _slug, ...rest } = data;
-      await updateApartment(hostId, slug, rest);
-    },
-    [hostId, slug, isNew]
-  );
+  const toast = useToast();
+  const [saving, setSaving] = useState(false);
 
-  const { saving, saved, error: saveError } = useAutosave({
-    data: form,
-    onSave: handleAutosave,
-    enabled: created && !isNew && !readonly,
-    delay: 1500,
-  });
+  const editDirty = useDirtyForm(form, savedForm ?? form);
+  const isDirty = !isNew && savedForm !== null && editDirty;
+  const { showModal, confirmDiscard, cancelDiscard, guardedNavigate } =
+    useUnsavedChangesGuard(isDirty);
+
+  const handleSave = useCallback(async () => {
+    if (!hostId || !slug || isNew || readonly) return;
+    setSaving(true);
+    try {
+      const { slug: _slug, ...rest } = form;
+      await updateApartment(hostId, slug, rest);
+      setSavedForm(form);
+      toast.success("Apartment saved.");
+    } catch {
+      toast.error("Saving failed.");
+    } finally {
+      setSaving(false);
+    }
+  }, [hostId, slug, isNew, readonly, form, toast]);
 
   const validate = (): string[] => {
     const errs: string[] = [];
@@ -201,21 +207,24 @@ export default function ApexApartmentEdit() {
       navigate(`/hosts/${routeHostId}/edit/apartments/${form.slug}`, {
         replace: true,
       });
+      toast.success("Apartment created.");
     } catch (err) {
-      alert(
-        "Failed to create. " + (err instanceof Error ? err.message : "")
-      );
+      toast.error("Failed to create. " + (err instanceof Error ? err.message : ""));
     } finally {
       setCreating(false);
     }
   };
 
   const handleBack = () => {
-    navigate(
-      readonly
-        ? `/hosts/${routeHostId}`
-        : `/hosts/${routeHostId}/edit`
-    );
+    if (isDirty) {
+      guardedNavigate(readonly ? `/hosts/${routeHostId}` : `/hosts/${routeHostId}/edit`);
+    } else {
+      navigate(
+        readonly
+          ? `/hosts/${routeHostId}`
+          : `/hosts/${routeHostId}/edit`
+      );
+    }
   };
 
   if (loading) {
@@ -233,15 +242,18 @@ export default function ApexApartmentEdit() {
 
   return (
     <div className="pb-24">
+      <DiscardChangesModal
+        open={showModal}
+        onCancel={cancelDiscard}
+        onDiscard={confirmDiscard}
+      />
+
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button
-            onClick={handleBack}
-            className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
-          >
+          <Button variant="secondary" size="sm" onClick={handleBack}>
             ← Back
-          </button>
+          </Button>
           <h1 className="text-2xl font-bold text-gray-900">
             {isNew
               ? "New Apartment"
@@ -250,10 +262,24 @@ export default function ApexApartmentEdit() {
                 : `Edit: ${form.name || form.slug}`}
           </h1>
         </div>
-        {!readonly && (
-          <AutosaveIndicator saving={saving} saved={saved} error={saveError} />
-        )}
       </div>
+
+      {!readonly && !isNew && (
+        <StickyFormFooter
+          dirty={isDirty}
+          left={null}
+          right={
+            <Button
+              variant="primary"
+              onClick={handleSave}
+              loading={saving}
+              disabled={saving}
+            >
+              {saving ? "Saving…" : "Save apartment"}
+            </Button>
+          }
+        />
+      )}
 
       {/* Validation errors */}
       {validationErrors.length > 0 && (
@@ -513,7 +539,9 @@ export default function ApexApartmentEdit() {
                 Booking Links
               </p>
               {!readonly && (
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => {
                     if (!newLinkLabel.trim() && !newLinkUrl.trim()) return;
                     update("bookingLinks", [
@@ -526,10 +554,9 @@ export default function ApexApartmentEdit() {
                     setNewLinkLabel("");
                     setNewLinkUrl("");
                   }}
-                  className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
                 >
                   + Add Link
-                </button>
+                </Button>
               )}
             </div>
             {form.bookingLinks.length === 0 ? (
@@ -565,17 +592,18 @@ export default function ApexApartmentEdit() {
                       className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
                     />
                     {!readonly && (
-                      <button
+                      <Button
+                        variant="destructive"
+                        size="sm"
                         onClick={() =>
                           update(
                             "bookingLinks",
                             form.bookingLinks.filter((_, j) => j !== i)
                           )
                         }
-                        className="text-red-400 hover:text-red-600"
                       >
                         ×
-                      </button>
+                      </Button>
                     )}
                   </div>
                 ))}
@@ -606,16 +634,17 @@ export default function ApexApartmentEdit() {
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-gray-700">iCal URLs</p>
               {!readonly && (
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => {
                     if (!newIcalUrl.trim()) return;
                     update("icalUrls", [...form.icalUrls, newIcalUrl.trim()]);
                     setNewIcalUrl("");
                   }}
-                  className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
                 >
                   + Add URL
-                </button>
+                </Button>
               )}
             </div>
             {form.icalUrls.length === 0 ? (
@@ -637,17 +666,18 @@ export default function ApexApartmentEdit() {
                       className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
                     />
                     {!readonly && (
-                      <button
+                      <Button
+                        variant="destructive"
+                        size="sm"
                         onClick={() =>
                           update(
                             "icalUrls",
                             form.icalUrls.filter((_, j) => j !== i)
                           )
                         }
-                        className="text-red-400 hover:text-red-600"
                       >
                         ×
-                      </button>
+                      </Button>
                     )}
                   </div>
                 ))}
@@ -835,23 +865,25 @@ export default function ApexApartmentEdit() {
 
       {/* Sticky bottom bar — only for new apartment creation */}
       {isNew && !readonly && (
-        <div className="fixed bottom-0 left-64 right-0 border-t border-gray-200 bg-white px-8 py-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={handleBack}
-              className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleCreate}
-              disabled={creating}
-              className="rounded-lg bg-amber-500 px-6 py-2 text-sm font-semibold text-gray-900 hover:bg-amber-400 disabled:opacity-40"
-            >
-              {creating ? "Creating…" : "Create Apartment"}
-            </button>
-          </div>
-        </div>
+        <StickyFormFooter
+          dirty={false}
+          left={null}
+          right={
+            <>
+              <Button variant="secondary" onClick={handleBack}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleCreate}
+                loading={creating}
+                disabled={creating}
+              >
+                {creating ? "Creating…" : "Create Apartment"}
+              </Button>
+            </>
+          }
+        />
       )}
     </div>
   );
@@ -933,12 +965,13 @@ function AmenityList({
           >
             {a}
             {!readonly && (
-              <button
+              <Button
+                variant="destructive"
+                size="sm"
                 onClick={() => onRemove(i)}
-                className="ml-1 text-gray-400 hover:text-gray-600"
               >
                 ×
-              </button>
+              </Button>
             )}
           </span>
         ))}
@@ -961,12 +994,9 @@ function AmenityList({
             placeholder="Add amenity…"
             className="block flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
           />
-          <button
-            onClick={add}
-            className="rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
-          >
+          <Button variant="secondary" size="sm" onClick={add}>
             Add
-          </button>
+          </Button>
         </div>
       )}
     </div>

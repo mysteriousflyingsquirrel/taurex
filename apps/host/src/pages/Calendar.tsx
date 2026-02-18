@@ -1,12 +1,13 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import PageHeader from "../components/PageHeader";
+import Button from "../components/Button";
 
 export default function Calendar() {
+  const navigate = useNavigate();
+
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">Calendar</h1>
-      <p className="mt-1 text-sm text-gray-600">
-        Read-only availability overview from iCal feeds.
-      </p>
+      <PageHeader title="Calendar" />
 
       <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-8 text-center">
         <p className="text-gray-600">
@@ -16,12 +17,9 @@ export default function Calendar() {
           This page will display a Gantt-style overview of all apartments and
           their booking status from external iCal feeds.
         </p>
-        <Link
-          to="/apartments"
-          className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-700"
-        >
-          Go to Apartments →
-        </Link>
+        <div className="mt-4">
+          <Button variant="secondary" onClick={() => navigate("/apartments")}>Go to Apartments</Button>
+        </div>
       </div>
     </div>
   );

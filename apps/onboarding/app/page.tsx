@@ -25,25 +25,25 @@ const pricingPlans = [
   {
     name: "Starter",
     price: "Free",
-    description: "Perfect for getting started with one property.",
+    description: "Perfect for getting started with one apartment.",
     features: ["1 apartment", "Public booking page", "Calendar management", "Email support"],
     cta: "Get Started",
     highlighted: false,
   },
   {
     name: "Professional",
-    price: "CHF 29",
+    price: "CHF 29.00",
     period: "/month",
-    description: "For hosts managing multiple properties.",
+    description: "For hosts managing multiple apartments.",
     features: ["Up to 10 apartments", "Custom domain", "Priority support", "Advanced analytics"],
     cta: "Start Free Trial",
     highlighted: true,
   },
   {
     name: "Business",
-    price: "CHF 79",
+    price: "CHF 79.00",
     period: "/month",
-    description: "For property management companies.",
+    description: "For hosts with large portfolios.",
     features: ["Unlimited apartments", "Multiple custom domains", "Dedicated support", "API access"],
     cta: "Contact Sales",
     highlighted: false,
@@ -88,7 +88,7 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-6">
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-sm font-semibold tracking-wide text-indigo-600 uppercase">Everything you need</p>
-            <h2 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Manage your properties with ease</h2>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Manage your apartments with ease</h2>
             <p className="mt-4 text-lg text-gray-600">From booking pages to calendar management, Taurex gives you all the tools to run your rental business.</p>
           </div>
           <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
@@ -145,7 +145,7 @@ export default function Home() {
       <section className="bg-white py-20 sm:py-28">
         <div className="mx-auto max-w-7xl px-6 text-center">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Ready to simplify your rental business?</h2>
-          <p className="mx-auto mt-4 max-w-xl text-lg text-gray-600">Join property owners who trust Taurex to manage their vacation rentals. Get started in minutes.</p>
+          <p className="mx-auto mt-4 max-w-xl text-lg text-gray-600">Join hosts who trust Taurex to manage their vacation rentals. Get started in minutes.</p>
           <a href="https://host.taurex.one" className="mt-8 inline-block rounded-lg bg-indigo-600 px-8 py-3 text-base font-semibold text-white shadow-sm hover:bg-indigo-700">Get Started for Free</a>
         </div>
       </section>
