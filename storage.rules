@@ -1,0 +1,31 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Public read for all images (booking app needs thumbnails and full-res)
+    match /images/{hostId}/{apartmentSlug}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && (request.auth.token.admin == true
+                       || isHostOwner(hostId));
+    }
+
+    match /images_big/{hostId}/{apartmentSlug}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && (request.auth.token.admin == true
+                       || isHostOwner(hostId));
+    }
+
+    // Deny everything else
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    function isHostOwner(hostId) {
+      return firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
+          && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.hostId == hostId;
+    }
+  }
+}

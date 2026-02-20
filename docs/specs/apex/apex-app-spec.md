@@ -235,3 +235,63 @@ These are added to the shared `@taurex/firebase` package.
 ## 12. Responsive Design
 
 The apex app is primarily a desktop tool. Standard Tailwind breakpoints apply but the minimum usable width is tablet (`md: 768px`). The sidebar collapses to a hamburger menu on small screens is a future enhancement.
+
+---
+
+## Acceptance Criteria
+
+### Authentication
+- [ ] Login page accepts email + password and authenticates via Firebase Auth.
+- [ ] ApexGuard checks for `apex` custom claim on ID token before allowing access to protected routes.
+- [ ] Unauthenticated or non-apex users are redirected to `/login`.
+- [ ] Session is maintained via `onAuthChanged` listener in AuthContext.
+
+### Layout
+- [ ] Sidebar uses dark background (`bg-gray-900`) with amber accent.
+- [ ] Nav items (Dashboard, Hosts, Users, Apartments) have icons and show active state when on that route.
+- [ ] User email and Logout are visible in the sidebar.
+- [ ] Sidebar collapses to hamburger on small screens (deferred).
+
+### Dashboard
+- [ ] Stat card "Total Hosts" shows count from `fetchHosts().length`.
+- [ ] Stat card "Total Apartments" shows sum of apartments across all hosts.
+- [ ] Stat card "Total Users" shows count of user profiles.
+- [ ] Quick actions include: Create Host, View Hosts, View Users, and navigate correctly.
+
+### Host Management
+- [ ] Host list shows table with Name, Slug, Languages (pills), Currency, Apartments count, and View/Edit/Delete actions.
+- [ ] Host list search filters by name or slug (client-side).
+- [ ] Create Host form has Name (required), Slug (required, lowercase, alphanumeric + hyphens, unique), Languages (at least 1), Base Currency (required, default CHF).
+- [ ] Create Host submit calls `createHost()` and navigates to `/hosts`.
+- [ ] Edit Host form is pre-filled; Slug is read-only.
+- [ ] Edit Host submit calls `updateHost()`.
+- [ ] Host detail header shows name, slug, languages, currency; has Edit, Delete, and Open Public Page buttons.
+- [ ] Host detail has Apartments tab with read-only table (name, slug, price, location).
+- [ ] Host detail has Seasons tab with list for current year (name, color, date range count).
+- [ ] Host detail has Users tab with list of assigned users (email, UID).
+- [ ] Delete Host uses confirmation modal: warning text, prompt "type delete {slug}", input must match exactly, red delete button disabled until match; on confirm calls `deleteHost()` and navigates to `/hosts`.
+
+### User Management
+- [ ] User list shows UID, Email (or UID if unavailable), Host (resolved name), and Delete action.
+- [ ] User list search filters by UID or host.
+- [ ] Delete User uses confirmation modal: warning about profile removal only, prompt "type delete {uid}", delete button disabled until match; on confirm deletes user profile doc.
+- [ ] No in-app user creation; note/documentation that creation and apex claims are via Firebase Console / Admin (deferred for apex UI).
+
+### Apartments Overview
+- [ ] Apartments page shows cross-host read-only table with Name, Host, Slug, Price (+ currency), Location (truncated), Images count.
+- [ ] Host dropdown filter restricts table to selected host.
+- [ ] Search filter restricts by apartment name.
+
+### Shared Components
+- [ ] ConfirmDeleteModal accepts props: open, title, description, confirmPhrase, buttonLabel, onConfirm, onCancel.
+- [ ] ConfirmDeleteModal delete button is red and disabled until typed input exactly matches confirmPhrase.
+- [ ] ConfirmDeleteModal calls onConfirm when confirmed and onCancel when cancelled.
+
+### Firebase Service Extensions
+- [ ] `fetchAllUsers()` returns all documents from `users` collection.
+- [ ] `deleteUserProfile(uid)` deletes the user profile document for the given UID.
+- [ ] `countApartments(hostId)` returns apartment count for the given host.
+
+### Responsive
+- [ ] App is usable at minimum tablet width (`md: 768px`).
+- [ ] Layout and tables behave correctly on desktop; small-screen sidebar collapse is optional (deferred).

@@ -49,6 +49,39 @@ Taurex.one consists of four separate frontend applications and one shared backen
 
 Each application is deployed independently.
 
+### System Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Vercel (Hosting)                        │
+│                                                                 │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────┐ ┌──────────┐   │
+│  │  Onboarding  │ │   Booking    │ │   Host   │ │   Apex   │   │
+│  │  (Next.js)   │ │  (Next.js)   │ │  (Vite)  │ │  (Vite)  │   │
+│  │  taurex.one  │ │booking.taurex│ │host.taurex│ │apex.taurex│  │
+│  │              │ │   .one       │ │  .one    │ │  .one    │   │
+│  │  No auth     │ │  No auth     │ │ Auth req │ │ Apex req │   │
+│  └──────────────┘ └──────┬───────┘ └────┬─────┘ └────┬─────┘   │
+│                          │              │             │         │
+└──────────────────────────┼──────────────┼─────────────┼─────────┘
+                           │              │             │
+                    read-only        read/write     read/write
+                     (public)      (host-scoped)     (all hosts)
+                           │              │             │
+                  ┌────────┴──────────────┴─────────────┴────────┐
+                  │              Firebase (Backend)                │
+                  │                                               │
+                  │  ┌────────────┐  ┌───────────┐  ┌─────────┐  │
+                  │  │    Auth    │  │ Firestore │  │ Storage │  │
+                  │  └────────────┘  └───────────┘  └─────────┘  │
+                  │                                               │
+                  │  ┌──────────────────────────────────────────┐ │
+                  │  │  @taurex/firebase (shared package)       │ │
+                  │  │  config · auth · types · services        │ │
+                  │  └──────────────────────────────────────────┘ │
+                  └───────────────────────────────────────────────┘
+```
+
 ---
 
 ## 3. User Types

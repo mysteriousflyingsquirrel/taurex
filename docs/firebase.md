@@ -146,14 +146,38 @@ Custom domains map internally to `hosts/{hostId}`. The browser must not be redir
 
 ## 6. Firestore Security Rules
 
-Conceptual rules (to be implemented):
+Rules are implemented in `firestore.rules` at the repository root.
 
-- **Host users** may only read/write `hosts/{their-hostId}/...`
-- **Apex** (`admin: true` claim) may read/write all hosts
-- **Public read** access to `hosts/{hostId}/apartments` for the booking app (no auth required)
-- **Guests** have no direct Firestore access to private data
+### Helpers
 
-Actual rules must enforce host isolation strictly.
+| Function | Logic |
+|---|---|
+| `isSignedIn()` | `request.auth != null` |
+| `isApex()` | Signed in + `request.auth.token.admin == true` |
+| `isHostOwner(hostId)` | Signed in + `users/{uid}.hostId == hostId` |
+
+### Permission Matrix
+
+| Collection | Read | Create | Update | Delete |
+|---|---|---|---|---|
+| `users/{uid}` | Apex OR own UID | Apex only | Apex only | Apex only |
+| `hosts/{hostId}` | Public | Apex only | Apex OR host owner | Apex only |
+| `hosts/{hostId}/apartments/{slug}` | Public | Apex OR host owner | Apex OR host owner | Apex OR host owner |
+| `hosts/{hostId}/seasons/{id}` | Public | Apex OR host owner | Apex OR host owner | Apex OR host owner |
+| `hosts/{hostId}/{other}/{docId}` | Apex OR host owner | Apex OR host owner | Apex OR host owner | Apex OR host owner |
+
+### Key Enforcement
+
+- Host isolation: a host user can only access `hosts/{hostId}/...` where their `users/{uid}.hostId` matches
+- Apex bypasses all host-scoping restrictions
+- Public read on hosts, apartments, and seasons enables the booking app (no auth required)
+- Users collection is locked down: only apex can write, users can only read their own profile
+- Catch-all rule for future subcollections defaults to host-owner + apex access
+
+### Not Yet Implemented
+
+- **Storage rules**: No `storage.rules` file exists. Firebase Storage is currently using default rules.
+- **Cloud Functions**: Not yet implemented. Planned for iCal parsing, user creation, and admin operations.
 
 ---
 

@@ -348,3 +348,74 @@ Settings Page
   └── updateHost(hostId, { languages, baseCurrency })  ← autosave
   └── refreshHost()
 ```
+
+---
+
+## Acceptance Criteria
+
+### Authentication & Access
+- [ ] Login with email/password succeeds and redirects to `/`.
+- [ ] Invalid or missing `users/{uid}` or `hostId` results in sign-out and "Not authorized" error.
+- [ ] Host resolution: `users/{uid}` → `hostId`, then `hosts/{hostId}` loaded; empty/missing `languages` defaults to `["en"]`.
+- [ ] `AuthGuard` shows spinner while loading; if `!user`, redirects to `/login`.
+- [ ] Host resolution failure triggers sign-out and redirect.
+- [ ] Logout button in sidebar calls `signOut()` and redirects to `/login`.
+- [ ] Session persists across browser restart (Firebase default persistence).
+
+### Layout
+- [ ] Sidebar has fixed width (`w-64`) with nav items: Dashboard, Calendar, Apartments, Seasons, Settings.
+- [ ] Active nav item is highlighted; active state uses `pathname.startsWith(href)` for nested routes.
+- [ ] Bottom of sidebar shows user email and Logout button.
+- [ ] Main content area is scrollable and padded.
+
+### Dashboard
+- [ ] Setup guide checklist is shown until all steps are complete.
+- [ ] Checklist steps: Configure languages (`languages.length > 1` → link to `/settings`), Create seasons for current year (link `/seasons`), Add first apartment (link `/apartments/new`), Set pricing (at least one apartment with `priceDefault > 0`).
+- [ ] Progress bar displays `{done}/{total}`.
+- [ ] When all steps complete, "🎉 All set!" is shown with green styling.
+- [ ] Stats cards show apartments count (link to `/apartments`), seasons count for current year (link to `/seasons`), and public page link `taurex.one/{slug}`.
+- [ ] Quick actions: "+ Add Apartment" → `/apartments/new`, "Manage Seasons" → `/seasons`, "Settings" → `/settings`.
+
+### Calendar
+- [ ] Apartment selector offers "All Apartments" (default) and each single apartment.
+- [ ] Prev / Today / Next month buttons shift view by one month; "Today" resets to current month.
+- [ ] Page handles missing or unavailable iCal data without breaking (deferred).
+
+### Apartments
+- [ ] List view shows columns: Apartment (name + slug), Guests, Bedrooms, m², Price/night, Min Stay, Actions; responsive hiding per spec (e.g. m² hidden on mobile + tablet).
+- [ ] Row click navigates to `/apartments/{slug}`.
+- [ ] "+ Add Apartment" button navigates to `/apartments/new`.
+- [ ] Delete shows confirmation dialog; on confirm, deletes Firestore document and removes row.
+- [ ] Empty state shows "No apartments yet." and "Create your first apartment" link.
+- [ ] Edit/Create page has Back button, title ("New Apartment" or "Edit: {name}"), and autosave indicator.
+- [ ] After creation, edits autosave with 1.5s debounce; new apartment requires manual "Create Apartment" (sticky bottom bar).
+- [ ] Section A: Slug auto-slugified and disabled after creation; Name required; Descriptions textarea per host language.
+- [ ] Section B: All fields mandatory (guests ≥ 1, bedrooms, bathrooms, doubleBeds, singleBeds, sqm ≥ 0); grid 2 cols mobile, 3 desktop.
+- [ ] Section C: Images section shows placeholder (deferred).
+- [ ] Section D: Amenities per language as chips with remove; Add input + Enter; trim and prevent duplicates.
+- [ ] Section E: Address with Nominatim autocomplete (400ms debounce), lat/lng filled on selection.
+- [ ] Section F: Booking links list and iCal URLs list.
+- [ ] Section G: Default price (mandatory, currency from host); per-season overrides for current-year seasons.
+- [ ] Section H: Default min stay (mandatory, min 1); per-season overrides for current-year seasons.
+- [ ] Create validation: required slug, name, guests ≥ 1, bedrooms, bathrooms, doubleBeds, singleBeds, sqm > 0, priceDefault > 0, minStayDefault ≥ 1; errors in red card above sections.
+
+### Seasons
+- [ ] Header shows title "Seasons" and autosave indicator (saving/saved/error).
+- [ ] Year selector shows current year + next 4 as tabs; selected year has indigo styling; changing year loads seasons for that year.
+- [ ] Season list card: "Seasons for {year} (N)", "Copy from {year-1}" with confirmation, "+ Add Season" opens create modal.
+- [ ] Season pills show colour dot + name; hover reveals edit and delete; selected has bold border and tinted background.
+- [ ] Create/Edit modal: Name (with ID preview `{year}-{slugified-name}`), Colour (12 preset palette).
+- [ ] Create: ID = `{year}-{slugify(name)}`; validated non-empty and unique for year; new season has empty `dateRanges` and is auto-selected.
+- [ ] Edit updates name and color.
+- [ ] Delete: confirmation "Are you sure you want to delete **{name}**?"; Firestore delete; first remaining season auto-selected.
+- [ ] Year calendar: 12 mini-months in responsive grid (2/3/4 cols); Mo–Su headers; day cells as rounded buttons with states: unassigned (grey), assigned (season colour), preview, selection start (ring), hover (ring).
+- [ ] Painting: IDLE — click assigned day removes; click other starts range. RANGE_IN_PROGRESS — click completes range (add to season, remove overlaps); Escape cancels.
+- [ ] Seasons autosave with 2s debounce after painting or editing; delete is immediate.
+- [ ] Legend panel shows per-season day counts and "Default" days remaining for the displayed year.
+
+### Settings
+- [ ] Host info displayed read-only: Host ID, Name, Slug.
+- [ ] Base currency: description shown; radio cards CHF (default), EUR, USD, GBP; selection autosaves (1s debounce) via `updateHost(hostId, { baseCurrency })`.
+- [ ] Price labels across host app use `baseCurrency` from context.
+- [ ] Languages: description shown; EN default and always on (cannot be removed); DE, FR, IT as toggle cards; changes autosave (1s debounce) via `updateHost(hostId, { languages, baseCurrency })`.
+- [ ] After language/currency save, `refreshHost()` runs so all pages see updated settings immediately.

@@ -1,19 +1,21 @@
-# Cursor Rules — Taurex.one
+---
+description: General project rules for Taurex.one -- always active baseline
+alwaysApply: true
+---
+
+# Taurex.one — General Rules
 
 ## Operating Mode
 - Follow repository docs as source of truth.
+- Follow docs/ai/orchestra.md for pipeline order and handoffs.
 - Do not invent features or flows.
 - Prefer small, reviewable changes.
 - Never break multi-tenant isolation.
-- Host = host app.
-- Admin = apex app.
+- Host = host app. Admin = apex app.
 
 ## Architecture
 Monorepo (npm workspaces):
-- apps/onboarding
-- apps/booking
-- apps/host
-- apps/apex
+- apps/onboarding, apps/booking, apps/host, apps/apex
 - packages/firebase
 
 ## Code Standards
@@ -24,8 +26,8 @@ Monorepo (npm workspaces):
 - Keep naming consistent.
 
 ## UI/UX
-- Follow docs/ai_skills/taurex_ui_system.md
-- When improving UI, apply docs/ai_skills/ui_ux_pro_max.md
+- Follow docs/ui/ui-constitution.md
+- When improving UI, apply docs/ui/ui-improvement-guide.md
 - Do not change business logic unless requested.
 
 ## Working Pattern

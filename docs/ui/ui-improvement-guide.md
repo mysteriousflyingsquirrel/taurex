@@ -1,4 +1,4 @@
-# UI/UX Pro Max Skill (Adapted)
+# UI/UX Improvement Guide
 
 ## Goal
 Improve UI/UX while preserving existing product intent and text.

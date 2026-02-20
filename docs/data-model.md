@@ -127,6 +127,27 @@ Firebase Storage Root
 
 ---
 
+## 3b. Firestore Indexes
+
+Firestore automatically creates single-field indexes for every field. The queries below use additional ordering or filtering that may require composite indexes.
+
+### Current Queries
+
+| Service | Query | Index Needed |
+|---|---|---|
+| `fetchHosts()` | `hosts` ordered by `slug` | Single-field (auto) |
+| `fetchSeasons(hostId, year)` | `hosts/{hostId}/seasons` where `year == X` | Single-field (auto) |
+| `fetchApartments(hostId)` | `hosts/{hostId}/apartments` (all docs) | None |
+| `fetchAllUsers()` | `users` (all docs) | None |
+
+No composite indexes are required for the current query patterns. All queries either fetch full collections, filter on a single field, or order on a single field — all covered by automatic indexes.
+
+### Future Considerations
+
+If queries grow to combine filters (e.g., `where("year", "==", X)` + `orderBy("name")`), composite indexes will need to be declared in `firestore.indexes.json` and deployed via Firebase CLI.
+
+---
+
 ## 4. TypeScript Types
 
 These types are defined in `@taurex/firebase` and shared across all applications.

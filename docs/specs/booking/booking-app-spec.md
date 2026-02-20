@@ -312,3 +312,75 @@ Key behaviours:
 - Image gallery: 320px → 384px → 500px
 - Amenities: 1 → 2 → 3 columns
 - Booking links: stacked → inline
+
+---
+
+## Acceptance Criteria
+
+### Routing
+- [ ] `/{hostSlug}` resolves to host home (apartment listing).
+- [ ] `/{hostSlug}/{apartmentSlug}` resolves to apartment detail + booking.
+- [ ] Unmatched path renders 404 Not Found.
+
+### Internationalisation (i18n)
+- [ ] Language switcher pills appear in header only when host has 2+ languages.
+- [ ] Locale is driven by `?lang=` query parameter.
+- [ ] All internal links preserve `?lang` and other query params.
+- [ ] `useTranslation()` / `t()` returns UI strings for current language (en, de, fr, it).
+- [ ] Apartment descriptions and amenities use content keyed by current lang with fallback to `en`.
+- [ ] Default locale is first language in `host.languages`.
+
+### Host Home Page
+- [ ] Host is resolved via `fetchHostBySlug(hostSlug)`; Host Not Found page shown when not found.
+- [ ] Header shows host name (left) and language switcher (right when 2+ languages).
+- [ ] Availability bar shows DateRangePicker with `?checkIn` and `?checkOut` in URL; dates display as `dd.mm.yyyy`.
+- [ ] Availability bar shows GuestStepper with `?guests=N` (min 1, max 20); param omitted when 1.
+- [ ] "Show only available" checkbox is disabled until both dates are selected (deferred).
+- [ ] Reset button clears all filter params, preserves `?lang`; visible only when any filter is active.
+- [ ] Apartment map shows all host apartments as markers with popup (name + link); auto-fits bounds; hidden if no apartments have valid lat/lng.
+- [ ] Apartment grid is responsive: 1 col mobile, 2 md, 3 lg; gap 24px.
+- [ ] Grid shows only apartments where `facts.guests >= selectedGuests`.
+- [ ] Empty grid shows translated "No apartments available".
+- [ ] Apartment card: first image 4:3, price badge (currency + price/night), name, fact pills (guests, bedrooms, bathrooms, m²); entire card links to `/{hostSlug}/{apartmentSlug}` preserving query params.
+- [ ] Host Not Found shows centred message and link back to taurex.one.
+
+### Apartment Detail
+- [ ] Page resolves host then `fetchApartmentBySlug(hostId, apartmentSlug)`; Apartment Not Found when not found.
+- [ ] Min stay uses `fetchSeasons(hostId)`.
+- [ ] Header matches host home; breadcrumb is Host name → Apartment name.
+- [ ] Image gallery: images from `images[]`, cross-fade 500ms, arrow + dot navigation, touch swipe; heights 320px (mobile), 384px (md), 500px (lg); grey empty state when no images.
+- [ ] Name displayed as large heading; price as "{currency} {priceDefault} / night" below.
+- [ ] Facts grid (2→3→4 cols): white rounded cards, no icons — Guests, Bedrooms, Double/Single beds (if >0), Bathrooms, m² (if >0).
+- [ ] Description from `descriptions[lang]` with fallback to `en`; rendered with `whitespace-pre-line`.
+- [ ] Amenities grid (2–4 cols): white rounded cards, no icons; source `amenities[lang]` with fallback to `en`.
+- [ ] Location: address in card when set; Leaflet map ~200px with single marker when lat/lng valid; map interactive (zoom/pan).
+- [ ] Availability section shows placeholder "Coming soon…" card (deferred).
+- [ ] Booking section: selected dates from URL in `dd.mm.yyyy` or hint to select on listing; approximate total = nights × priceDefault with disclaimer; best price guarantee banner; minimum stay from seasons when >1; Booking Request button disabled; external `bookingLinks[]` open in new tab.
+- [ ] "More apartments" row: pill links to other host apartments (excluding current), each to `/{hostSlug}/{apartmentSlug}`.
+- [ ] Apartment Not Found shows message and link back to `/{hostSlug}`.
+
+### Shared Components
+- [ ] **Badge**: rounded pill; variants `default` (grey), `accent` (indigo).
+- [ ] **Button**: rounded; variants `primary` (indigo), `secondary` (grey), `outline` (border).
+- [ ] **ImageCarousel**: props `images`, optional `height`; cross-fade, arrows, dots, touch swipe, lazy loading.
+- [ ] **GuestStepper**: props `value`, `onChange`, `min`, `max`.
+- [ ] **DateRangePicker**: trigger shows `dd.mm.yyyy` range or placeholder; dropdown two months side-by-side with nav arrows; first click check-in, second click check-out; range highlighted; days before today disabled; check-out after check-in; closes on outside click or after selecting check-out.
+- [ ] **ApartmentMap**: props `apartments`, `hostSlug`, `lang`; markers with popups (name + link); auto-fits bounds for apartments with valid lat/lng.
+- [ ] **LocationMap**: props `lat`, `lng`, `label`; single marker, interactive.
+
+### Date and Currency Formatting
+- [ ] `formatDate(YYYY-MM-DD)` displays as `dd.mm.yyyy` (e.g. 17.02.2026).
+- [ ] Prices display host `baseCurrency` symbol (CHF, €, $, £ per spec table).
+
+### Responsive Breakpoints
+- [ ] Apartment grid uses 1 → 2 → 3 columns at mobile / md (768px) / lg (1024px).
+- [ ] Image gallery heights 320px → 384px → 500px at mobile / md / lg.
+- [ ] Amenities grid is responsive (2–4 cols).
+- [ ] Booking links layout: stacked on small screens, inline on larger.
+
+### Phase 2 (deferred)
+- [ ] Availability calendar with iCal integration (deferred).
+- [ ] "Show only available" filter wired to availability data (deferred).
+- [ ] Booking modal / booking request flow (deferred).
+- [ ] iCal availability API (Cloud Function) (deferred).
+- [ ] Custom domains for host resolution (deferred).
