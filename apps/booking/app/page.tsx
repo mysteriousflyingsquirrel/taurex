@@ -28,34 +28,34 @@ function DevHostList() {
   }, []);
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-gray-50 px-6 py-16">
+    <div className="flex min-h-screen flex-col items-center bg-background px-6 py-16">
       <div className="w-full max-w-lg">
-        <h1 className="text-2xl font-bold text-gray-900">Booking — Dev</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-foreground">Booking — Dev</h1>
+        <p className="mt-1 text-sm text-muted">
           Select a host to preview their booking page.
         </p>
 
         {loading ? (
-          <p className="mt-8 text-sm text-gray-400">Loading hosts…</p>
+          <p className="mt-8 text-sm text-muted">Loading hosts…</p>
         ) : hosts.length === 0 ? (
-          <p className="mt-8 text-sm text-gray-400">
+          <p className="mt-8 text-sm text-muted">
             No hosts found. Create one in the Apex dashboard first.
           </p>
         ) : (
-          <ul className="mt-6 divide-y divide-gray-200 rounded-xl border border-gray-200 bg-white">
+          <ul className="mt-6 divide-y divide-border rounded-xl border border-border bg-surface">
             {hosts.map((h) => (
               <li key={h.id}>
                 <Link
                   href={`/${h.slug}`}
-                  className="flex items-center justify-between px-5 py-4 transition hover:bg-gray-50"
+                  className="flex items-center justify-between px-5 py-4 transition hover:bg-surface-alt"
                 >
                   <div>
-                    <span className="font-medium text-gray-900">{h.name}</span>
-                    <code className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
+                    <span className="font-medium text-foreground">{h.name}</span>
+                    <code className="ml-2 rounded bg-surface-alt px-1.5 py-0.5 text-xs text-muted">
                       /{h.slug}
                     </code>
                   </div>
-                  <span className="text-sm text-gray-400">→</span>
+                  <span className="text-sm text-muted">→</span>
                 </Link>
               </li>
             ))}

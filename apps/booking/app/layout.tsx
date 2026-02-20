@@ -11,11 +11,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         {children}
-        <footer className="border-t border-gray-200 bg-white py-8">
+        <footer className="border-t border-border bg-surface py-8">
           <div className="mx-auto max-w-7xl px-6 text-center">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-muted">
               Powered by{" "}
-              <a href="https://taurex.one" className="font-medium text-indigo-600 hover:text-indigo-700">
+              <a href="https://taurex.one" className="font-medium text-primary hover:text-primary-hover">
                 Taurex
               </a>
             </p>

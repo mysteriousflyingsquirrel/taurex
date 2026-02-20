@@ -51,14 +51,14 @@ export default function ImageCarousel({
 
   if (!images || images.length === 0) {
     return (
-      <div className={`${height} flex items-center justify-center rounded-xl bg-gray-100 text-sm text-gray-400`}>
+      <div className={`${height} flex items-center justify-center rounded-xl bg-surface-alt text-sm text-muted`}>
         {emptyText}
       </div>
     );
   }
 
   return (
-    <div className={`group relative ${height} overflow-hidden rounded-xl bg-gray-100`} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+    <div className={`group relative ${height} overflow-hidden rounded-xl bg-surface-alt`} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       {images.map((img, i) => (
         <img
           key={img.src}
@@ -70,18 +70,18 @@ export default function ImageCarousel({
       ))}
       {images.length > 1 && (
         <>
-          <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-1.5 opacity-0 shadow transition hover:bg-white group-hover:opacity-100" aria-label="Previous image">
-            <svg className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+          <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-surface/80 p-1.5 opacity-0 shadow transition hover:bg-surface group-hover:opacity-100" aria-label="Previous image">
+            <svg className="h-5 w-5 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
           </button>
-          <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-1.5 opacity-0 shadow transition hover:bg-white group-hover:opacity-100" aria-label="Next image">
-            <svg className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+          <button onClick={next} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-surface/80 p-1.5 opacity-0 shadow transition hover:bg-surface group-hover:opacity-100" aria-label="Next image">
+            <svg className="h-5 w-5 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
           </button>
         </>
       )}
       {images.length > 1 && (
         <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
           {images.map((_, i) => (
-            <button key={i} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrent(i); }} className={`h-2 rounded-full transition-all ${i === current ? "w-6 bg-white" : "w-2 bg-white/60 hover:bg-white/80"}`} aria-label={`Image ${i + 1}`} />
+            <button key={i} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrent(i); }} className={`h-2 rounded-full transition-all ${i === current ? "w-6 bg-surface" : "w-2 bg-surface/60 hover:bg-surface/80"}`} aria-label={`Image ${i + 1}`} />
           ))}
         </div>
       )}

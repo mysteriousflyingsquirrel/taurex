@@ -113,15 +113,15 @@ export default function AddressAutocomplete({
         onChange={(e) => handleInput(e.target.value)}
         onFocus={() => results.length > 0 && setOpen(true)}
         placeholder="Search address…"
-        className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+        className="block w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
       />
       {loading && (
         <div className="absolute right-3 top-2.5">
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </div>
       )}
       {open && results.length > 0 && (
-        <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+        <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-border bg-surface shadow-lg">
           {results.map((r, i) => {
             const formatted = r.address
               ? formatAddress(r.address)
@@ -131,13 +131,13 @@ export default function AddressAutocomplete({
                 <button
                   type="button"
                   onClick={() => handleSelect(r)}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-indigo-50"
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-surface-alt"
                 >
-                  <span className="font-medium text-gray-900">
+                  <span className="font-medium text-foreground">
                     {formatted || r.display_name}
                   </span>
                   {formatted && formatted !== r.display_name && (
-                    <span className="mt-0.5 block text-xs text-gray-400 truncate">
+                    <span className="mt-0.5 block text-xs text-muted truncate">
                       {r.display_name}
                     </span>
                   )}

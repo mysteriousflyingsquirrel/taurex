@@ -13,9 +13,9 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const base = "inline-flex items-center justify-center rounded-lg font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-amber-500 text-gray-900 hover:bg-amber-400 focus:ring-amber-500 border border-amber-500",
-  secondary: "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 focus:ring-amber-500",
-  destructive: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 border border-red-600",
+  primary: "bg-primary text-primary-fg hover:bg-primary-hover focus:ring-ring border border-primary",
+  secondary: "bg-surface text-foreground hover:bg-surface-alt border border-input focus:ring-ring",
+  destructive: "bg-destructive text-white hover:bg-destructive/90 focus:ring-destructive border border-destructive",
 };
 
 const sizes: Record<Size, string> = {

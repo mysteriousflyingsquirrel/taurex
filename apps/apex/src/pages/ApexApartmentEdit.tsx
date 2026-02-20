@@ -230,7 +230,7 @@ export default function ApexApartmentEdit() {
   if (loading) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Loading…</h1>
+        <h1 className="text-2xl font-bold text-foreground">Loading…</h1>
       </div>
     );
   }
@@ -254,7 +254,7 @@ export default function ApexApartmentEdit() {
           <Button variant="secondary" size="sm" onClick={handleBack}>
             ← Back
           </Button>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-foreground">
             {isNew
               ? "New Apartment"
               : readonly
@@ -283,11 +283,11 @@ export default function ApexApartmentEdit() {
 
       {/* Validation errors */}
       {validationErrors.length > 0 && (
-        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
-          <p className="text-sm font-semibold text-red-800">
+        <div className="mt-4 rounded-xl border border-border bg-destructive-bg p-4">
+          <p className="text-sm font-semibold text-destructive">
             Please fix the following:
           </p>
-          <ul className="mt-2 list-inside list-disc text-sm text-red-700">
+          <ul className="mt-2 list-inside list-disc text-sm text-destructive">
             {validationErrors.map((e, i) => (
               <li key={i}>{e}</li>
             ))}
@@ -305,7 +305,7 @@ export default function ApexApartmentEdit() {
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-foreground">
                 Slug *
               </label>
               <input
@@ -314,16 +314,16 @@ export default function ApexApartmentEdit() {
                 onChange={(e) => update("slug", slugify(e.target.value))}
                 disabled={!isNew || readonly}
                 placeholder="e.g. wega"
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                className="mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none disabled:bg-surface-alt disabled:text-muted"
               />
               {!isNew && (
-                <p className="mt-1 text-xs text-gray-400">
+                <p className="mt-1 text-xs text-muted">
                   Slug cannot be changed after creation.
                 </p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-foreground">
                 Name *
               </label>
               <input
@@ -332,17 +332,17 @@ export default function ApexApartmentEdit() {
                 onChange={(e) => update("name", e.target.value)}
                 disabled={readonly}
                 placeholder="e.g. Apartment Wega"
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                className="mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none disabled:bg-surface-alt disabled:text-muted"
               />
             </div>
           </div>
 
           {/* Descriptions per language */}
           <div className="mt-4 space-y-4">
-            <p className="text-sm font-medium text-gray-700">Descriptions</p>
+            <p className="text-sm font-medium text-foreground">Descriptions</p>
             {languages.map((lang) => (
               <div key={lang}>
-                <label className="block text-sm font-medium text-gray-500">
+                <label className="block text-sm font-medium text-muted">
                   {langLabel(lang)} ({lang.toUpperCase()})
                 </label>
                 <textarea
@@ -355,7 +355,7 @@ export default function ApexApartmentEdit() {
                   }
                   disabled={readonly}
                   rows={3}
-                  className="mt-1 block w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                  className="mt-1 block w-full resize-y rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none disabled:bg-surface-alt disabled:text-muted"
                 />
               </div>
             ))}
@@ -388,7 +388,7 @@ export default function ApexApartmentEdit() {
               ] as const
             ).map(({ key, label, min }) => (
               <div key={key}>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-foreground">
                   {label}
                 </label>
                 <input
@@ -402,7 +402,7 @@ export default function ApexApartmentEdit() {
                       [key]: e.target.value ? Number(e.target.value) : 0,
                     })
                   }
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                  className="mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none disabled:bg-surface-alt disabled:text-muted"
                 />
               </div>
             ))}
@@ -415,7 +415,7 @@ export default function ApexApartmentEdit() {
           open={openSections.images}
           onToggle={() => toggleSection("images")}
         >
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted">
             Image upload will be available in a future update.
           </p>
         </SectionCard>
@@ -468,7 +468,7 @@ export default function ApexApartmentEdit() {
         >
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-foreground">
                 Address
               </label>
               <div className="mt-1">
@@ -480,14 +480,14 @@ export default function ApexApartmentEdit() {
                   disabled={readonly}
                 />
               </div>
-              <p className="mt-1 text-xs text-gray-400">
+              <p className="mt-1 text-xs text-muted">
                 Start typing to search. Selecting an address auto-fills
                 coordinates.
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-foreground">
                   Latitude
                 </label>
                 <input
@@ -501,11 +501,11 @@ export default function ApexApartmentEdit() {
                       lat: Number(e.target.value),
                     })
                   }
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                  className="mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none disabled:bg-surface-alt disabled:text-muted"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-foreground">
                   Longitude
                 </label>
                 <input
@@ -519,7 +519,7 @@ export default function ApexApartmentEdit() {
                       lng: Number(e.target.value),
                     })
                   }
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                  className="mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none disabled:bg-surface-alt disabled:text-muted"
                 />
               </div>
             </div>
@@ -535,7 +535,7 @@ export default function ApexApartmentEdit() {
           {/* Booking Links */}
           <div>
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-sm font-medium text-foreground">
                 Booking Links
               </p>
               {!readonly && (
@@ -560,7 +560,7 @@ export default function ApexApartmentEdit() {
               )}
             </div>
             {form.bookingLinks.length === 0 ? (
-              <p className="mt-2 text-sm text-gray-400">
+              <p className="mt-2 text-sm text-muted">
                 No booking links yet.
               </p>
             ) : (
@@ -577,7 +577,7 @@ export default function ApexApartmentEdit() {
                         update("bookingLinks", next);
                       }}
                       placeholder="Label"
-                      className="w-40 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                      className="w-40 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none disabled:bg-surface-alt disabled:text-muted"
                     />
                     <input
                       type="text"
@@ -589,7 +589,7 @@ export default function ApexApartmentEdit() {
                         update("bookingLinks", next);
                       }}
                       placeholder="https://..."
-                      className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                      className="flex-1 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none disabled:bg-surface-alt disabled:text-muted"
                     />
                     {!readonly && (
                       <Button
@@ -616,14 +616,14 @@ export default function ApexApartmentEdit() {
                   value={newLinkLabel}
                   onChange={(e) => setNewLinkLabel(e.target.value)}
                   placeholder="Label"
-                  className="w-40 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                  className="w-40 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
                 />
                 <input
                   type="text"
                   value={newLinkUrl}
                   onChange={(e) => setNewLinkUrl(e.target.value)}
                   placeholder="https://..."
-                  className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                  className="flex-1 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
                 />
               </div>
             )}
@@ -632,7 +632,7 @@ export default function ApexApartmentEdit() {
           {/* iCal URLs */}
           <div className="mt-6">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-700">iCal URLs</p>
+              <p className="text-sm font-medium text-foreground">iCal URLs</p>
               {!readonly && (
                 <Button
                   variant="secondary"
@@ -648,7 +648,7 @@ export default function ApexApartmentEdit() {
               )}
             </div>
             {form.icalUrls.length === 0 ? (
-              <p className="mt-2 text-sm text-gray-400">No iCal URLs yet.</p>
+              <p className="mt-2 text-sm text-muted">No iCal URLs yet.</p>
             ) : (
               <div className="mt-2 space-y-2">
                 {form.icalUrls.map((url, i) => (
@@ -663,7 +663,7 @@ export default function ApexApartmentEdit() {
                         update("icalUrls", next);
                       }}
                       placeholder="https://..."
-                      className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                      className="flex-1 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none disabled:bg-surface-alt disabled:text-muted"
                     />
                     {!readonly && (
                       <Button
@@ -701,7 +701,7 @@ export default function ApexApartmentEdit() {
                     }
                   }}
                   placeholder="https://..."
-                  className="block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                  className="block w-full rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
                 />
               </div>
             )}
@@ -715,7 +715,7 @@ export default function ApexApartmentEdit() {
           onToggle={() => toggleSection("pricing")}
         >
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground">
               Default Price ({currencySymbol(baseCurrency)}/night) *
             </label>
             <input
@@ -730,20 +730,20 @@ export default function ApexApartmentEdit() {
                 )
               }
               placeholder="e.g. 120"
-              className="mt-1 block w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+              className="mt-1 block w-48 rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none disabled:bg-surface-alt disabled:text-muted"
             />
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-muted">
               Used for days not covered by any season.
             </p>
           </div>
 
           {yearSeasons.length === 0 ? (
-            <p className="mt-4 text-sm text-gray-400">
+            <p className="mt-4 text-sm text-muted">
               No seasons configured for {currentYear}.
             </p>
           ) : (
             <div className="mt-4">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted">
                 Override price per night for specific seasons. Leave blank to
                 use the default.
               </p>
@@ -754,7 +754,7 @@ export default function ApexApartmentEdit() {
                       className="h-3 w-3 rounded-full"
                       style={{ backgroundColor: season.color }}
                     />
-                    <label className="min-w-0 truncate text-sm text-gray-700">
+                    <label className="min-w-0 truncate text-sm text-foreground">
                       {season.name}
                     </label>
                     <input
@@ -776,7 +776,7 @@ export default function ApexApartmentEdit() {
                           ? `default: ${form.priceDefault}`
                           : currencySymbol(baseCurrency)
                       }
-                      className="w-28 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                      className="w-28 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none disabled:bg-surface-alt disabled:text-muted"
                     />
                   </div>
                 ))}
@@ -792,7 +792,7 @@ export default function ApexApartmentEdit() {
           onToggle={() => toggleSection("minStay")}
         >
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground">
               Default (nights) *
             </label>
             <input
@@ -807,20 +807,20 @@ export default function ApexApartmentEdit() {
                 )
               }
               placeholder="e.g. 3"
-              className="mt-1 block w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+              className="mt-1 block w-48 rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none disabled:bg-surface-alt disabled:text-muted"
             />
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-muted">
               Used for days not covered by any season.
             </p>
           </div>
 
           {yearSeasons.length === 0 ? (
-            <p className="mt-4 text-sm text-gray-400">
+            <p className="mt-4 text-sm text-muted">
               No seasons configured for {currentYear}.
             </p>
           ) : (
             <div className="mt-4">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted">
                 Override minimum stay (nights) for specific seasons. Leave blank
                 to use the default.
               </p>
@@ -831,7 +831,7 @@ export default function ApexApartmentEdit() {
                       className="h-3 w-3 rounded-full"
                       style={{ backgroundColor: season.color }}
                     />
-                    <label className="min-w-0 truncate text-sm text-gray-700">
+                    <label className="min-w-0 truncate text-sm text-foreground">
                       {season.name}
                     </label>
                     <input
@@ -853,7 +853,7 @@ export default function ApexApartmentEdit() {
                           ? `default: ${form.minStayDefault}`
                           : "nights"
                       }
-                      className="w-28 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                      className="w-28 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none disabled:bg-surface-alt disabled:text-muted"
                     />
                   </div>
                 ))}
@@ -901,14 +901,14 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+    <div className="rounded-xl border border-border bg-surface shadow-sm">
       <button
         onClick={onToggle}
         className="flex w-full items-center justify-between px-6 py-4 text-left"
       >
-        <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
         <svg
-          className={`h-5 w-5 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`h-5 w-5 text-muted transition-transform ${open ? "rotate-180" : ""}`}
           fill="none"
           viewBox="0 0 24 24"
           strokeWidth={1.5}
@@ -922,7 +922,7 @@ function SectionCard({
         </svg>
       </button>
       {open && (
-        <div className="border-t border-gray-100 px-6 py-4">{children}</div>
+        <div className="border-t border-border px-6 py-4">{children}</div>
       )}
     </div>
   );
@@ -954,14 +954,14 @@ function AmenityList({
 
   return (
     <div>
-      <p className="text-sm font-medium text-gray-700">
+      <p className="text-sm font-medium text-foreground">
         {label} ({lang.toUpperCase()})
       </p>
       <div className="mt-2 flex flex-wrap gap-2">
         {amenities.map((a, i) => (
           <span
             key={i}
-            className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700"
+            className="inline-flex items-center gap-1 rounded-full bg-surface-alt px-3 py-1 text-sm text-foreground"
           >
             {a}
             {!readonly && (
@@ -976,7 +976,7 @@ function AmenityList({
           </span>
         ))}
         {amenities.length === 0 && (
-          <span className="text-sm text-gray-400">None</span>
+          <span className="text-sm text-muted">None</span>
         )}
       </div>
       {!readonly && (
@@ -992,7 +992,7 @@ function AmenityList({
               }
             }}
             placeholder="Add amenity…"
-            className="block flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+            className="block flex-1 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
           />
           <Button variant="secondary" size="sm" onClick={add}>
             Add

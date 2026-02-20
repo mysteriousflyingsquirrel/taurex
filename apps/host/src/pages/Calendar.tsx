@@ -9,11 +9,11 @@ export default function Calendar() {
     <div>
       <PageHeader title="Calendar" />
 
-      <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-8 text-center">
-        <p className="text-gray-600">
+      <div className="mt-8 rounded-2xl border border-border bg-surface p-8 text-center">
+        <p className="text-muted">
           The availability calendar will be available in a future update.
         </p>
-        <p className="mt-2 text-sm text-gray-400">
+        <p className="mt-2 text-sm text-muted">
           This page will display a Gantt-style overview of all apartments and
           their booking status from external iCal feeds.
         </p>

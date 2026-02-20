@@ -75,39 +75,39 @@ export default function Users() {
       />
 
       {error && (
-        <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mt-6 rounded-lg border border-border bg-destructive-bg px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
 
       {loading ? (
-        <p className="mt-8 text-sm text-gray-500">Loading users…</p>
+        <p className="mt-8 text-sm text-muted">Loading users…</p>
       ) : users.length === 0 ? (
-        <p className="mt-8 text-sm text-gray-500">No user profiles yet.</p>
+        <p className="mt-8 text-sm text-muted">No user profiles yet.</p>
       ) : (
         <>
-          <div className="mt-6 hidden overflow-hidden rounded-xl border border-gray-200 bg-white md:block">
+          <div className="mt-6 hidden overflow-hidden rounded-xl border border-border bg-surface md:block">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="px-6 py-3 font-medium text-gray-500">UID</th>
-                  <th className="px-6 py-3 font-medium text-gray-500">Host</th>
-                  <th className="px-6 py-3 font-medium text-gray-500">
+                <tr className="border-b border-border bg-surface-alt">
+                  <th className="px-6 py-3 font-medium text-muted">UID</th>
+                  <th className="px-6 py-3 font-medium text-muted">Host</th>
+                  <th className="px-6 py-3 font-medium text-muted">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {users.map((user) => (
-                  <tr key={user.uid} className="hover:bg-gray-50">
+                  <tr key={user.uid} className="hover:bg-surface-alt">
                     <td className="px-6 py-4">
-                      <code className="text-xs text-gray-600">{user.uid}</code>
+                      <code className="text-xs text-muted">{user.uid}</code>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-gray-900">
+                      <span className="text-foreground">
                         {hosts[user.hostId]?.name ?? user.hostId}
                       </span>
-                      <code className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
+                      <code className="ml-2 rounded bg-surface-alt px-1.5 py-0.5 text-xs text-muted">
                         {user.hostId}
                       </code>
                     </td>
@@ -130,14 +130,14 @@ export default function Users() {
             {users.map((user) => (
               <div
                 key={user.uid}
-                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                className="rounded-xl border border-border bg-surface p-4 shadow-sm"
               >
-                <p className="font-medium text-gray-900">
-                  <code className="text-xs text-gray-600">{user.uid}</code>
+                <p className="font-medium text-foreground">
+                  <code className="text-xs text-muted">{user.uid}</code>
                 </p>
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-sm text-muted">
                   {hosts[user.hostId]?.name ?? user.hostId}
-                  <code className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
+                  <code className="ml-2 rounded bg-surface-alt px-1.5 py-0.5 text-xs text-muted">
                     {user.hostId}
                   </code>
                 </p>
@@ -230,20 +230,20 @@ function CreateUserModal({
         onSubmit={handleSubmit}
         className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl"
       >
-        <h3 className="text-lg font-semibold text-gray-900">Create User</h3>
-        <p className="mt-1 text-sm text-gray-600">
+        <h3 className="text-lg font-semibold text-foreground">Create User</h3>
+        <p className="mt-1 text-sm text-muted">
           Creates a Firebase Auth account and links it to a host.
         </p>
 
         {error && (
-          <div className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mt-4 rounded-lg bg-destructive-bg px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}
 
         <div className="mt-5 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground">
               Email *
             </label>
             <input
@@ -252,12 +252,12 @@ function CreateUserModal({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="user@example.com"
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+              className="mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground">
               Password *
             </label>
             <input
@@ -266,23 +266,23 @@ function CreateUserModal({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Min. 6 characters"
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+              className="mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground">
               Host *
             </label>
             {hosts.length === 0 ? (
-              <p className="mt-1 text-sm text-red-600">
+              <p className="mt-1 text-sm text-destructive">
                 No hosts available. Create a host first.
               </p>
             ) : (
               <select
                 value={hostId}
                 onChange={(e) => setHostId(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                className="mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
               >
                 {hosts.map((h) => (
                   <option key={h.id} value={h.id}>

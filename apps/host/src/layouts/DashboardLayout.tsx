@@ -81,12 +81,10 @@ export default function DashboardLayout() {
 
   const sidebarContent = (
     <>
-      <div className="flex h-16 items-center border-b border-gray-200 px-6">
-        <span className="text-xl font-bold tracking-tight text-indigo-600">
-          taurex
-        </span>
+      <div className="flex h-16 items-center border-b border-border px-6">
+        <img src="/logo-primary_light.png" alt="Taurex" className="h-10 w-auto" />
         {host && (
-          <span className="ml-2 truncate text-xs text-gray-400">
+          <span className="ml-auto truncate text-xs text-muted">
             {host.name}
           </span>
         )}
@@ -101,8 +99,8 @@ export default function DashboardLayout() {
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${
                 isActive
-                  ? "bg-indigo-50 text-indigo-700"
-                  : "text-gray-700 hover:bg-gray-100"
+                  ? "bg-primary/10 text-primary"
+                  : "text-foreground hover:bg-surface-alt"
               }`
             }
           >
@@ -114,11 +112,11 @@ export default function DashboardLayout() {
           </NavLink>
         ))}
       </nav>
-      <div className="border-t border-gray-200 p-4">
-        <p className="truncate px-3 text-xs text-gray-500">{user?.email}</p>
+      <div className="border-t border-border p-4">
+        <p className="truncate px-3 text-xs text-muted">{user?.email}</p>
         <button
           onClick={handleLogout}
-          className="mt-2 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+          className="mt-2 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-surface-alt"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
@@ -130,40 +128,35 @@ export default function DashboardLayout() {
   );
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Mobile overlay */}
+    <div className="flex min-h-screen bg-surface-alt">
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Mobile sidebar drawer */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white shadow-xl transition-transform duration-200 md:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-background shadow-xl transition-transform duration-200 md:hidden ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {sidebarContent}
       </aside>
 
-      {/* Desktop sidebar */}
-      <aside className="hidden w-64 flex-col border-r border-gray-200 bg-white md:flex">
+      <aside className="hidden w-64 flex-col border-r border-border bg-background md:flex">
         {sidebarContent}
       </aside>
 
-      {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Mobile top bar */}
-        <div className="flex h-14 items-center border-b border-gray-200 bg-white px-4 md:hidden">
+        <div className="flex h-14 items-center border-b border-border bg-background px-4 md:hidden">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="rounded-lg p-2 text-gray-600 hover:bg-gray-100"
+            className="rounded-lg p-2 text-muted hover:bg-surface-alt"
             aria-label="Open menu"
           >
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
             </svg>
           </button>
-          <span className="ml-3 text-lg font-bold tracking-tight text-indigo-600">taurex</span>
+          <img src="/logo-primary_light.png" alt="Taurex" className="ml-3 h-9 w-auto" />
         </div>
 
         <main className="flex-1 overflow-auto">

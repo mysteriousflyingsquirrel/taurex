@@ -42,8 +42,8 @@ export default function HostManageLayout() {
   if (loading) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Loading…</h1>
-        <p className="mt-4 text-sm text-gray-500">Loading host data…</p>
+        <h1 className="text-2xl font-bold text-foreground">Loading…</h1>
+        <p className="mt-4 text-sm text-muted">Loading host data…</p>
       </div>
     );
   }
@@ -51,8 +51,8 @@ export default function HostManageLayout() {
   if (notFound || !host) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Host Not Found</h1>
-        <p className="mt-2 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-foreground">Host Not Found</h1>
+        <p className="mt-2 text-sm text-muted">
           The host "{hostId}" does not exist.
         </p>
         <div className="mt-4">
@@ -68,26 +68,26 @@ export default function HostManageLayout() {
     return (
       <div>
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-gray-500">
-          <Link to="/hosts" className="hover:text-amber-600">
+        <nav className="flex items-center gap-2 text-sm text-muted">
+          <Link to="/hosts" className="hover:text-primary">
             Hosts
           </Link>
           <span>›</span>
           <Link
             to={`/hosts/${host.id}`}
-            className="hover:text-amber-600"
+            className="hover:text-primary"
           >
             {host.name}
           </Link>
           <span>›</span>
-          <span className="text-gray-900">Edit</span>
+          <span className="text-foreground">Edit</span>
         </nav>
 
         <div className="mx-auto mt-8 max-w-lg">
-          <div className="rounded-xl border-2 border-amber-200 bg-amber-50 p-8 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+          <div className="rounded-xl border-2 border-primary/30 bg-primary/10 p-8 text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/20">
               <svg
-                className="h-7 w-7 text-amber-600"
+                className="h-7 w-7 text-primary"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={1.5}
@@ -100,14 +100,14 @@ export default function HostManageLayout() {
                 />
               </svg>
             </div>
-            <h2 className="mt-4 text-xl font-bold text-gray-900">
+            <h2 className="mt-4 text-xl font-bold text-foreground">
               Edit {host.name}
             </h2>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-muted">
               You are about to edit this host's configuration. To confirm,
               type:
             </p>
-            <code className="mt-2 inline-block rounded border border-amber-200 bg-white px-3 py-1.5 text-sm font-semibold text-amber-700">
+            <code className="mt-2 inline-block rounded border border-border bg-surface px-3 py-1.5 text-sm font-semibold text-primary">
               {confirmPhrase}
             </code>
             <input
@@ -120,12 +120,12 @@ export default function HostManageLayout() {
               }}
               placeholder={confirmPhrase}
               autoFocus
-              className="mt-4 block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-center text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+              className="mt-4 block w-full rounded-lg border border-input px-3 py-2.5 text-center text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
             />
             <button
               onClick={() => setConfirmed(true)}
               disabled={typed !== confirmPhrase}
-              className="mt-4 rounded-lg bg-amber-500 px-6 py-2.5 text-sm font-semibold text-gray-900 hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-40"
+              className="mt-4 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40"
             >
               Confirm & Edit
             </button>
@@ -138,9 +138,9 @@ export default function HostManageLayout() {
   return (
     <ManagedHostProvider tenant={host} apartments={apartments} readonly={false}>
       {/* Amber safety banner */}
-      <div className="mb-6 flex items-center gap-3 rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3">
+      <div className="mb-6 flex items-center gap-3 rounded-xl border-2 border-warning bg-warning-bg px-4 py-3">
         <svg
-          className="h-5 w-5 flex-shrink-0 text-amber-600"
+          className="h-5 w-5 flex-shrink-0 text-warning"
           fill="none"
           viewBox="0 0 24 24"
           strokeWidth={1.5}
@@ -152,13 +152,13 @@ export default function HostManageLayout() {
             d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
           />
         </svg>
-        <p className="text-sm font-medium text-amber-800">
+        <p className="text-sm font-medium text-warning">
           You are editing <strong>{host.name}</strong>'s configuration.
           Remember to save your changes before exiting.
         </p>
         <Link
           to={`/hosts/${host.id}`}
-          className="ml-auto rounded-lg bg-amber-200 px-3 py-1 text-sm font-medium text-amber-900 hover:bg-amber-300"
+          className="ml-auto rounded-lg bg-primary/20 px-3 py-1 text-sm font-medium text-primary hover:bg-primary-hover"
         >
           Exit Edit Mode
         </Link>

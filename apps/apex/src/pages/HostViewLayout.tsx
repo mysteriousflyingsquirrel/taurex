@@ -59,8 +59,8 @@ export default function HostViewLayout() {
   if (loading) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Loading…</h1>
-        <p className="mt-4 text-sm text-gray-500">Loading host data…</p>
+        <h1 className="text-2xl font-bold text-foreground">Loading…</h1>
+        <p className="mt-4 text-sm text-muted">Loading host data…</p>
       </div>
     );
   }
@@ -68,8 +68,8 @@ export default function HostViewLayout() {
   if (notFound || !host) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Host Not Found</h1>
-        <p className="mt-2 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-foreground">Host Not Found</h1>
+        <p className="mt-2 text-sm text-muted">
           The host "{hostId}" does not exist.
         </p>
         <div className="mt-4">
@@ -82,15 +82,15 @@ export default function HostViewLayout() {
   return (
     <ManagedHostProvider tenant={host} apartments={apartments} readonly>
       <div className="mb-6">
-        <nav className="flex items-center gap-2 text-sm text-gray-500">
-          <Link to="/hosts" className="hover:text-amber-600">
+        <nav className="flex items-center gap-2 text-sm text-muted">
+          <Link to="/hosts" className="hover:text-primary">
             Hosts
           </Link>
           <span>›</span>
-          <span className="text-gray-900">{host.name}</span>
+          <span className="text-foreground">{host.name}</span>
         </nav>
         <div className="mt-4 flex items-start justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">{host.name}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{host.name}</h1>
           <div className="flex items-center gap-2">
             <Button
               variant="primary"

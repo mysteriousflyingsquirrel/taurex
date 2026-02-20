@@ -94,27 +94,27 @@ export default function Dashboard() {
       <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Link
           to="/apartments"
-          className="rounded-2xl border border-gray-200 bg-white p-6 transition hover:border-indigo-200 hover:shadow-sm"
+          className="rounded-2xl border border-border bg-surface p-6 transition hover:shadow-sm"
         >
-          <p className="text-sm font-medium text-gray-500">Apartments</p>
-          <p className="mt-2 text-3xl font-bold text-gray-900">
+          <p className="text-sm font-medium text-muted">Apartments</p>
+          <p className="mt-2 text-3xl font-bold text-foreground">
             {loading ? "…" : apartments.length}
           </p>
         </Link>
         <Link
           to="/seasons"
-          className="rounded-2xl border border-gray-200 bg-white p-6 transition hover:border-indigo-200 hover:shadow-sm"
+          className="rounded-2xl border border-border bg-surface p-6 transition hover:shadow-sm"
         >
-          <p className="text-sm font-medium text-gray-500">
+          <p className="text-sm font-medium text-muted">
             Seasons ({currentYear})
           </p>
-          <p className="mt-2 text-3xl font-bold text-gray-900">
+          <p className="mt-2 text-3xl font-bold text-foreground">
             {loading ? "…" : seasonCount}
           </p>
         </Link>
-        <div className="rounded-2xl border border-gray-200 bg-white p-6">
-          <p className="text-sm font-medium text-gray-500">Public Page</p>
-          <p className="mt-2 text-sm font-medium text-indigo-600">
+        <div className="rounded-2xl border border-border bg-surface p-6">
+          <p className="text-sm font-medium text-muted">Public Page</p>
+          <p className="mt-2 text-sm font-medium text-primary">
             taurex.one/{host?.slug}
           </p>
         </div>
@@ -125,22 +125,22 @@ export default function Dashboard() {
         <div
           className={`mt-6 rounded-2xl border p-6 ${
             allDone
-              ? "border-green-200 bg-green-50"
-              : "border-indigo-200 bg-indigo-50"
+              ? "border-border bg-success-bg"
+              : "border-border bg-primary/10"
           }`}
         >
           <div className="flex items-center justify-between">
             <div>
               <h2
                 className={`text-lg font-semibold ${
-                  allDone ? "text-green-900" : "text-indigo-900"
+                  allDone ? "text-success" : "text-foreground"
                 }`}
               >
                 {allDone ? "🎉 All set!" : "Setup Guide"}
               </h2>
               <p
                 className={`mt-1 text-sm ${
-                  allDone ? "text-green-700" : "text-indigo-700"
+                  allDone ? "text-success" : "text-primary"
                 }`}
               >
                 {allDone
@@ -150,15 +150,15 @@ export default function Dashboard() {
             </div>
             {!allDone && (
               <div className="flex items-center gap-2">
-                <div className="h-2 w-24 rounded-full bg-indigo-200">
+                <div className="h-2 w-24 rounded-full bg-primary/20">
                   <div
-                    className="h-2 rounded-full bg-indigo-600 transition-all"
+                    className="h-2 rounded-full bg-primary transition-all"
                     style={{
                       width: `${(doneCount / checklist.length) * 100}%`,
                     }}
                   />
                 </div>
-                <span className="text-sm font-medium text-indigo-700">
+                <span className="text-sm font-medium text-primary">
                   {doneCount}/{checklist.length}
                 </span>
               </div>
@@ -170,19 +170,19 @@ export default function Dashboard() {
               {checklist.map((item, idx) => (
                 <div
                   key={item.key}
-                  className={`flex items-start gap-4 rounded-xl border bg-white p-4 transition ${
+                  className={`flex items-start gap-4 rounded-xl border bg-surface p-4 transition ${
                     item.done
-                      ? "border-green-200 opacity-60"
-                      : "border-gray-200"
+                      ? "border-border opacity-60"
+                      : "border-border"
                   }`}
                 >
                   <div className="flex-shrink-0 pt-0.5">
                     {item.done ? (
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-green-600">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-success-bg text-success">
                         ✓
                       </span>
                     ) : (
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-sm font-medium text-gray-500">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-surface-alt text-sm font-medium text-muted">
                         {idx + 1}
                       </span>
                     )}
@@ -191,13 +191,13 @@ export default function Dashboard() {
                     <p
                       className={`text-sm font-semibold ${
                         item.done
-                          ? "text-gray-400 line-through"
-                          : "text-gray-900"
+                          ? "text-muted line-through"
+                          : "text-foreground"
                       }`}
                     >
                       {item.label}
                     </p>
-                    <p className="mt-0.5 text-sm text-gray-500">
+                    <p className="mt-0.5 text-sm text-muted">
                       {item.description}
                     </p>
                   </div>
@@ -212,8 +212,8 @@ export default function Dashboard() {
       )}
 
       {/* Quick Actions */}
-      <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-gray-900">Quick Actions</h2>
+      <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
+        <h2 className="text-lg font-semibold text-foreground">Quick Actions</h2>
         <div className="mt-4 flex flex-wrap gap-3">
           <Button variant="primary" onClick={() => navigate("/apartments/new")}>+ Add Apartment</Button>
           <Button variant="secondary" onClick={() => navigate("/seasons")}>Manage Seasons</Button>

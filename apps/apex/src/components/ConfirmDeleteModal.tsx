@@ -34,12 +34,12 @@ export default function ConfirmDeleteModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-2xl">
+      <div className="w-full max-w-lg rounded-xl bg-surface p-6 shadow-2xl">
         {/* Warning header */}
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-red-100">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-destructive-bg">
             <svg
-              className="h-5 w-5 text-red-600"
+              className="h-5 w-5 text-destructive"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={2}
@@ -53,16 +53,16 @@ export default function ConfirmDeleteModal({
             </svg>
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-            <p className="mt-1 text-sm text-gray-600">{description}</p>
+            <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+            <p className="mt-1 text-sm text-muted">{description}</p>
           </div>
         </div>
 
         {/* Confirmation input */}
         <div className="mt-6">
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-foreground">
             To confirm, type{" "}
-            <code className="rounded bg-gray-100 px-1.5 py-0.5 text-sm font-semibold text-red-600">
+            <code className="rounded bg-surface-alt px-1.5 py-0.5 text-sm font-semibold text-destructive">
               {confirmPhrase}
             </code>{" "}
             below:
@@ -73,7 +73,7 @@ export default function ConfirmDeleteModal({
             onChange={(e) => setTyped(e.target.value)}
             placeholder={confirmPhrase}
             autoFocus
-            className="mt-2 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:ring-1 focus:ring-red-500 focus:outline-none"
+            className="mt-2 block w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
           />
         </div>
 
@@ -82,14 +82,14 @@ export default function ConfirmDeleteModal({
           <button
             onClick={onCancel}
             disabled={loading}
-            className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+            className="rounded-lg border border-input bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-alt disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
             disabled={!matches || loading}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg border border-destructive bg-destructive px-4 py-2 text-sm font-semibold text-white hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? "Deleting…" : buttonLabel}
           </button>

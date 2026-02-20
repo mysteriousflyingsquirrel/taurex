@@ -9,8 +9,8 @@ export function AuthGuard({ children }: { children: ReactNode }) {
 
   if (authLoading || (user && hostLoading)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -21,10 +21,10 @@ export function AuthGuard({ children }: { children: ReactNode }) {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-        <div className="w-full max-w-sm rounded-2xl border border-red-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm font-medium text-red-600">{error}</p>
-          <p className="mt-2 text-xs text-gray-500">
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 text-center shadow-sm">
+          <p className="text-sm font-medium text-destructive">{error}</p>
+          <p className="mt-2 text-xs text-muted">
             You have been signed out. Please contact support if this persists.
           </p>
         </div>

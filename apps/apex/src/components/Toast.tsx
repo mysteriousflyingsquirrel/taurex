@@ -60,8 +60,8 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
   }, []);
 
   const bg = toast.type === "success"
-    ? "border-green-200 bg-green-50 text-green-800"
-    : "border-red-200 bg-red-50 text-red-800";
+    ? "border-success/30 bg-success-bg text-success"
+    : "border-destructive/30 bg-destructive-bg text-destructive";
 
   return (
     <div
@@ -71,7 +71,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
       {toast.type === "error" && (
         <button
           onClick={onDismiss}
-          className="ml-3 text-red-500 hover:text-red-700"
+          className="ml-3 text-destructive hover:text-destructive/80"
           aria-label="Dismiss"
         >
           ✕

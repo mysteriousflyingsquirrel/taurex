@@ -147,18 +147,18 @@ export default function HostConfigPage() {
       {!readonly && (
         <div className="flex items-center justify-between">
           <div>
-            <nav className="flex items-center gap-2 text-sm text-gray-500">
-              <Link to="/hosts" className="hover:text-amber-600">
+            <nav className="flex items-center gap-2 text-sm text-muted">
+              <Link to="/hosts" className="hover:text-primary">
                 Hosts
               </Link>
               <span>›</span>
-              <Link to={viewBase} className="hover:text-amber-600">
+              <Link to={viewBase} className="hover:text-primary">
                 {host.name}
               </Link>
               <span>›</span>
-              <span className="text-gray-900">Edit</span>
+              <span className="text-foreground">Edit</span>
             </nav>
-            <h1 className="mt-2 text-2xl font-bold text-gray-900">
+            <h1 className="mt-2 text-2xl font-bold text-foreground">
               Edit: {host.name}
             </h1>
           </div>
@@ -189,56 +189,56 @@ export default function HostConfigPage() {
       )}
 
       {/* Host Info */}
-      <div className={`${readonly ? "" : "mt-8"} rounded-2xl border border-gray-200 bg-white p-6`}>
-        <h2 className="text-lg font-semibold text-gray-900">Host Info</h2>
+      <div className={`${readonly ? "" : "mt-8"} rounded-2xl border border-border bg-surface p-6`}>
+        <h2 className="text-lg font-semibold text-foreground">Host Info</h2>
         <div className="mt-4 space-y-3">
           <div>
-            <p className="text-sm font-medium text-gray-500">Host ID</p>
-            <p className="text-sm text-gray-900">{host.id}</p>
+            <p className="text-sm font-medium text-muted">Host ID</p>
+            <p className="text-sm text-foreground">{host.id}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500">Name</p>
-            <p className="text-sm text-gray-900">{host.name}</p>
+            <p className="text-sm font-medium text-muted">Name</p>
+            <p className="text-sm text-foreground">{host.name}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500">Slug</p>
-            <p className="text-sm text-gray-900">{host.slug}</p>
+            <p className="text-sm font-medium text-muted">Slug</p>
+            <p className="text-sm text-foreground">{host.slug}</p>
           </div>
         </div>
       </div>
 
       {/* Billing */}
-      <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-gray-900">Billing</h2>
+      <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
+        <h2 className="text-lg font-semibold text-foreground">Billing</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           <div>
-            <p className="text-sm text-gray-500">Rate / apartment</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">
+            <p className="text-sm text-muted">Rate / apartment</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">
               {billing.unlocked ? "Free" : formatMoney(effectivePrice, "CHF")}
             </p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Apartments</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">
+            <p className="text-sm text-muted">Apartments</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">
               {apartments.length}
             </p>
           </div>
           <div>
-            <p className="text-sm text-gray-500">Monthly total</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">
+            <p className="text-sm text-muted">Monthly total</p>
+            <p className="mt-1 text-2xl font-bold text-foreground">
               {billing.unlocked ? "Free" : formatMoney(monthlyTotal, "CHF")}
             </p>
           </div>
         </div>
 
         {/* Unlock Toggle */}
-        <div className="mt-6 border-t border-gray-100 pt-6">
+        <div className="mt-6 border-t border-border pt-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-semibold text-gray-900">
+              <h3 className="text-sm font-semibold text-foreground">
                 Unlock Account
               </h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-muted">
                 Unlocked accounts have full access with no charges.
               </p>
             </div>
@@ -246,20 +246,20 @@ export default function HostConfigPage() {
               onClick={() => saveBilling({ unlocked: !billing.unlocked })}
               disabled={billingSaving || readonly}
               className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ${
-                billing.unlocked ? "bg-green-500" : "bg-gray-200"
+                billing.unlocked ? "bg-success" : "bg-surface-alt"
               } ${billingSaving || readonly ? "cursor-default opacity-50" : "cursor-pointer"}`}
             >
               <span
-                className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition-transform duration-200 ${
+                className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-surface shadow ring-0 transition-transform duration-200 ${
                   billing.unlocked ? "translate-x-5" : "translate-x-0"
                 }`}
               />
             </button>
           </div>
           {billing.unlocked && (
-            <div className="mt-3 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2">
-              <span className="h-2 w-2 rounded-full bg-green-500" />
-              <span className="text-sm font-medium text-green-700">
+            <div className="mt-3 flex items-center gap-2 rounded-lg bg-success-bg px-3 py-2">
+              <span className="h-2 w-2 rounded-full bg-success" />
+              <span className="text-sm font-medium text-success">
                 This account is unlocked — no charges apply
               </span>
             </div>
@@ -268,16 +268,16 @@ export default function HostConfigPage() {
 
         {/* Custom Price */}
         {!billing.unlocked && (
-          <div className="mt-6 border-t border-gray-100 pt-6">
-            <h3 className="text-sm font-semibold text-gray-900">
+          <div className="mt-6 border-t border-border pt-6">
+            <h3 className="text-sm font-semibold text-foreground">
               Price per Apartment
             </h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-muted">
               Leave empty to use the standard rate (CHF{" "}
               {STANDARD_PRICE_PER_APARTMENT}/month).
             </p>
             <div className="mt-4 flex items-center gap-3">
-              <span className="text-sm font-medium text-gray-500">CHF</span>
+              <span className="text-sm font-medium text-muted">CHF</span>
               <input
                 type="number"
                 min="0"
@@ -290,9 +290,9 @@ export default function HostConfigPage() {
                     e.target.value === "" ? null : parseFloat(e.target.value);
                   saveBilling({ pricePerApartment: num });
                 }}
-                className="w-32 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none disabled:bg-gray-50 disabled:text-gray-500"
+                className="w-32 rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none disabled:bg-surface-alt disabled:text-muted"
               />
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-muted">
                 / apartment / month
               </span>
               {!readonly && billing.pricePerApartment !== null && (
@@ -307,9 +307,9 @@ export default function HostConfigPage() {
             </div>
             {billing.pricePerApartment !== null &&
               billing.pricePerApartment < STANDARD_PRICE_PER_APARTMENT && (
-                <div className="mt-3 flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2">
-                  <span className="h-2 w-2 rounded-full bg-amber-500" />
-                  <span className="text-sm font-medium text-amber-700">
+                <div className="mt-3 flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2">
+                  <span className="h-2 w-2 rounded-full bg-primary" />
+                  <span className="text-sm font-medium text-primary">
                     Discounted rate (standard: CHF{" "}
                     {STANDARD_PRICE_PER_APARTMENT})
                   </span>
@@ -320,9 +320,9 @@ export default function HostConfigPage() {
       </div>
 
       {/* Base Currency */}
-      <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-gray-900">Base Currency</h2>
-        <p className="mt-1 text-sm text-gray-500">
+      <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
+        <h2 className="text-lg font-semibold text-foreground">Base Currency</h2>
+        <p className="mt-1 text-sm text-muted">
           All prices are stored and displayed in this currency.
         </p>
         <div className="mt-4 space-y-3">
@@ -334,17 +334,17 @@ export default function HostConfigPage() {
                 onClick={() => setCurrency(cur.code)}
                 className={`flex items-center justify-between rounded-xl border-2 px-4 py-3 transition ${
                   isActive
-                    ? "border-amber-500 bg-amber-50"
+                    ? "border-primary bg-primary/10"
                     : readonly
-                      ? "border-gray-100 bg-gray-50 opacity-50"
-                      : "border-gray-200 cursor-pointer hover:border-gray-300"
+                      ? "border-border bg-surface-alt opacity-50"
+                      : "border-border cursor-pointer hover:bg-surface-alt"
                 } ${readonly ? "" : "cursor-pointer"}`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="w-10 text-sm font-semibold text-gray-900">
+                  <span className="w-10 text-sm font-semibold text-foreground">
                     {cur.symbol}
                   </span>
-                  <span className="text-sm text-gray-700">
+                  <span className="text-sm text-foreground">
                     {cur.label} ({cur.code})
                   </span>
                 </div>
@@ -354,7 +354,7 @@ export default function HostConfigPage() {
                   checked={isActive}
                   disabled={readonly}
                   onChange={() => setCurrency(cur.code)}
-                  className="h-4 w-4 border-gray-300 text-amber-600 focus:ring-amber-500"
+                  className="h-4 w-4 border-input text-primary focus:ring-ring"
                 />
               </div>
             );
@@ -363,9 +363,9 @@ export default function HostConfigPage() {
       </div>
 
       {/* Languages */}
-      <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-gray-900">Languages</h2>
-        <p className="mt-1 text-sm text-gray-500">
+      <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
+        <h2 className="text-lg font-semibold text-foreground">Languages</h2>
+        <p className="mt-1 text-sm text-muted">
           Choose which languages are available. English is always enabled.
         </p>
         <div className="mt-4 space-y-3">
@@ -378,19 +378,19 @@ export default function HostConfigPage() {
                 onClick={() => !isDefault && toggleLanguage(lang.code)}
                 className={`flex items-center justify-between rounded-xl border-2 px-4 py-3 transition ${
                   isActive
-                    ? "border-amber-500 bg-amber-50"
+                    ? "border-primary bg-primary/10"
                     : readonly
-                      ? "border-gray-100 bg-gray-50 opacity-50"
-                      : "border-gray-200 cursor-pointer hover:border-gray-300"
+                      ? "border-border bg-surface-alt opacity-50"
+                      : "border-border cursor-pointer hover:bg-surface-alt"
                 } ${isDefault || readonly ? "" : "cursor-pointer"}`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold uppercase text-gray-900">
+                  <span className="text-sm font-semibold uppercase text-foreground">
                     {lang.code}
                   </span>
-                  <span className="text-sm text-gray-700">{lang.label}</span>
+                  <span className="text-sm text-foreground">{lang.label}</span>
                   {isDefault && (
-                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                    <span className="rounded-full bg-surface-alt px-2 py-0.5 text-xs font-medium text-muted">
                       Default
                     </span>
                   )}
@@ -400,7 +400,7 @@ export default function HostConfigPage() {
                   checked={isActive}
                   disabled={isDefault || readonly}
                   onChange={() => toggleLanguage(lang.code)}
-                  className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500 disabled:opacity-50"
+                  className="h-4 w-4 rounded border-input text-primary focus:ring-ring disabled:opacity-50"
                 />
               </div>
             );
@@ -412,9 +412,9 @@ export default function HostConfigPage() {
       <SeasonsSection hostId={hostId} readonly={readonly} />
 
       {/* Apartments */}
-      <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
+      <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-foreground">
             Apartments ({apartments.length})
           </h2>
           {!readonly && (
@@ -428,8 +428,8 @@ export default function HostConfigPage() {
         </div>
 
         {apartments.length === 0 ? (
-          <div className="mt-4 rounded-xl border border-gray-200 p-8 text-center">
-            <p className="text-gray-600">No apartments yet.</p>
+          <div className="mt-4 rounded-xl border border-border p-8 text-center">
+            <p className="text-muted">No apartments yet.</p>
             {!readonly && (
               <div className="mt-3">
                 <Button variant="primary" size="sm" onClick={() => navigate(`${editBase}/apartments/new`)}>Create the first apartment</Button>
@@ -437,36 +437,36 @@ export default function HostConfigPage() {
             )}
           </div>
         ) : (
-          <div className="mt-4 overflow-hidden rounded-xl border border-gray-200">
+          <div className="mt-4 overflow-hidden rounded-xl border border-border">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-gray-200 bg-gray-50">
+              <thead className="border-b border-border bg-surface-alt">
                 <tr>
-                  <th className="px-6 py-3 font-medium text-gray-500">
+                  <th className="px-6 py-3 font-medium text-muted">
                     Apartment
                   </th>
-                  <th className="hidden px-6 py-3 font-medium text-gray-500 md:table-cell">
+                  <th className="hidden px-6 py-3 font-medium text-muted md:table-cell">
                     Guests
                   </th>
-                  <th className="hidden px-6 py-3 font-medium text-gray-500 md:table-cell">
+                  <th className="hidden px-6 py-3 font-medium text-muted md:table-cell">
                     Bedrooms
                   </th>
-                  <th className="hidden px-6 py-3 font-medium text-gray-500 lg:table-cell">
+                  <th className="hidden px-6 py-3 font-medium text-muted lg:table-cell">
                     m²
                   </th>
-                  <th className="hidden px-6 py-3 font-medium text-gray-500 md:table-cell">
+                  <th className="hidden px-6 py-3 font-medium text-muted md:table-cell">
                     Price/night
                   </th>
-                  <th className="hidden px-6 py-3 font-medium text-gray-500 md:table-cell">
+                  <th className="hidden px-6 py-3 font-medium text-muted md:table-cell">
                     Min Stay
                   </th>
                   {!readonly && (
-                    <th className="px-6 py-3 font-medium text-gray-500">
+                    <th className="px-6 py-3 font-medium text-muted">
                       Actions
                     </th>
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {apartments.map((apt) => {
                   const aptUrl = readonly
                     ? `${viewBase}/apartments/${apt.slug}`
@@ -474,32 +474,32 @@ export default function HostConfigPage() {
                   return (
                     <tr
                       key={apt.slug}
-                      className="cursor-pointer hover:bg-gray-50"
+                      className="cursor-pointer hover:bg-surface-alt"
                       onClick={() => navigate(aptUrl)}
                     >
                       <td className="px-6 py-4">
                         <div>
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-foreground">
                             {apt.name || apt.slug}
                           </p>
-                          <p className="text-xs text-gray-400">{apt.slug}</p>
+                          <p className="text-xs text-muted">{apt.slug}</p>
                         </div>
                       </td>
-                      <td className="hidden px-6 py-4 text-gray-600 md:table-cell">
+                      <td className="hidden px-6 py-4 text-muted md:table-cell">
                         {apt.facts.guests}
                       </td>
-                      <td className="hidden px-6 py-4 text-gray-600 md:table-cell">
+                      <td className="hidden px-6 py-4 text-muted md:table-cell">
                         {apt.facts.bedrooms}
                       </td>
-                      <td className="hidden px-6 py-4 text-gray-600 lg:table-cell">
+                      <td className="hidden px-6 py-4 text-muted lg:table-cell">
                         {apt.facts.sqm || "—"}
                       </td>
-                      <td className="hidden px-6 py-4 text-gray-600 md:table-cell">
+                      <td className="hidden px-6 py-4 text-muted md:table-cell">
                         {apt.priceDefault
                           ? `${currencySymbol(baseCurrency)} ${apt.priceDefault}`
                           : "—"}
                       </td>
-                      <td className="hidden px-6 py-4 text-gray-600 md:table-cell">
+                      <td className="hidden px-6 py-4 text-muted md:table-cell">
                         {apt.minStayDefault
                           ? `${apt.minStayDefault} nights`
                           : "—"}
@@ -723,10 +723,10 @@ function SeasonsSection({
   const seasonList = Object.values(seasons);
 
   return (
-    <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
+    <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold text-gray-900">Seasons</h2>
+          <h2 className="text-lg font-semibold text-foreground">Seasons</h2>
           {!readonly && (
             <Button
               variant="primary"
@@ -762,11 +762,11 @@ function SeasonsSection({
 
       {/* Year selector */}
       <div className="mt-4">
-        <label className="text-sm font-medium text-gray-500">Year</label>
+        <label className="text-sm font-medium text-muted">Year</label>
         <select
           value={year}
           onChange={(e) => setYear(Number(e.target.value))}
-          className="ml-3 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+          className="ml-3 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
         >
           {YEAR_OPTIONS.map((y) => (
             <option key={y} value={y}>
@@ -777,9 +777,9 @@ function SeasonsSection({
       </div>
 
       {loading ? (
-        <p className="mt-4 text-sm text-gray-500">Loading seasons…</p>
+        <p className="mt-4 text-sm text-muted">Loading seasons…</p>
       ) : seasonList.length === 0 ? (
-        <p className="mt-4 text-sm text-gray-500">
+        <p className="mt-4 text-sm text-muted">
           No seasons for {year}.
         </p>
       ) : (
@@ -787,7 +787,7 @@ function SeasonsSection({
           {seasonList.map((season) => (
             <div
               key={season.id}
-              className="rounded-xl border border-gray-200 p-4"
+              className="rounded-xl border border-border p-4"
             >
               {/* Season header */}
               <div className="flex items-center justify-between">
@@ -796,10 +796,10 @@ function SeasonsSection({
                     className="h-4 w-4 rounded-full"
                     style={{ backgroundColor: season.color }}
                   />
-                  <span className="text-sm font-semibold text-gray-900">
+                  <span className="text-sm font-semibold text-foreground">
                     {season.name}
                   </span>
-                  <span className="text-xs text-gray-400">{season.id}</span>
+                  <span className="text-xs text-muted">{season.id}</span>
                 </div>
                 {!readonly && (
                   <div className="flex items-center gap-2">
@@ -824,12 +824,12 @@ function SeasonsSection({
               {/* Date ranges */}
               <div className="mt-3 space-y-2">
                 {season.dateRanges.length === 0 ? (
-                  <p className="text-sm text-gray-400">No date ranges.</p>
+                  <p className="text-sm text-muted">No date ranges.</p>
                 ) : (
                   season.dateRanges.map((range, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       {readonly ? (
-                        <span className="text-sm text-gray-700">
+                        <span className="text-sm text-foreground">
                           {formatDate(range.start)} — {formatDate(range.end)}
                         </span>
                       ) : (
@@ -845,9 +845,9 @@ function SeasonsSection({
                                 e.target.value
                               )
                             }
-                            className="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                            className="rounded-lg border border-input px-2 py-1 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
                           />
-                          <span className="text-gray-400">—</span>
+                          <span className="text-muted">—</span>
                           <input
                             type="date"
                             value={range.end}
@@ -859,7 +859,7 @@ function SeasonsSection({
                                 e.target.value
                               )
                             }
-                            className="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                            className="rounded-lg border border-input px-2 py-1 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
                           />
                           <Button
                             variant="destructive"
@@ -891,13 +891,13 @@ function SeasonsSection({
       {/* Create/Edit Season Modal */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
-            <h3 className="text-lg font-semibold text-gray-900">
+          <div className="w-full max-w-md rounded-xl bg-surface p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-foreground">
               {modal.mode === "create" ? "Create Season" : "Edit Season"}
             </h3>
             <div className="mt-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-foreground">
                   Name *
                 </label>
                 <input
@@ -908,16 +908,16 @@ function SeasonsSection({
                   }
                   placeholder="e.g. High Season"
                   autoFocus
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                  className="mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
                 />
                 {modal.mode === "create" && modal.name && (
-                  <p className="mt-1 text-xs text-gray-400">
+                  <p className="mt-1 text-xs text-muted">
                     ID: {year}-{slugify(modal.name) || "—"}
                   </p>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-foreground">
                   Colour
                 </label>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -927,7 +927,7 @@ function SeasonsSection({
                       onClick={() => setModal({ ...modal, color: c })}
                       className={`h-8 w-8 rounded-full transition-transform ${
                         modal.color === c
-                          ? "scale-110 ring-2 ring-gray-900 ring-offset-2"
+                          ? "scale-110 ring-2 ring-ring ring-offset-2"
                           : "hover:scale-105"
                       }`}
                       style={{ backgroundColor: c }}

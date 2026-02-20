@@ -14,8 +14,8 @@ export default function Login() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -40,23 +40,21 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold tracking-tight text-indigo-600">
-            taurex
-          </h1>
-          <p className="mt-2 text-sm text-gray-600">
+        <div className="flex flex-col items-center text-center">
+          <img src="/logo-primary_light.png" alt="Taurex" className="h-12 w-auto" />
+          <p className="mt-4 text-sm text-muted">
             Sign in to your host dashboard
           </p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="mt-8 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm"
+          className="mt-8 rounded-2xl border border-border bg-surface p-8 shadow-sm"
         >
           {error && (
-            <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="mb-4 rounded-lg bg-destructive-bg px-4 py-3 text-sm text-destructive">
               {error}
             </div>
           )}
@@ -64,7 +62,7 @@ export default function Login() {
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-foreground"
             >
               Email
             </label>
@@ -74,7 +72,7 @@ export default function Login() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+              className="mt-1 block w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
               placeholder="you@example.com"
             />
           </div>
@@ -82,7 +80,7 @@ export default function Login() {
           <div className="mt-4">
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-foreground"
             >
               Password
             </label>
@@ -92,7 +90,7 @@ export default function Login() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+              className="mt-1 block w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
               placeholder="Enter your password"
             />
           </div>
@@ -100,7 +98,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={submitting}
-            className="mt-6 w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+            className="mt-6 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover disabled:opacity-50"
           >
             {submitting ? "Signing in..." : "Sign In"}
           </button>

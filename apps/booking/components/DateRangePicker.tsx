@@ -107,20 +107,20 @@ export default function DateRangePicker({ checkIn, checkOut, onCheckInChange, on
 
   return (
     <div ref={ref} className="relative">
-      <button type="button" onClick={handleOpen} className={`w-full rounded-lg border bg-white px-3 py-2 text-left text-sm transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none ${checkIn || checkOut ? "border-gray-300 text-gray-900" : "border-gray-300 text-gray-400"}`}>
+      <button type="button" onClick={handleOpen} className={`w-full rounded-lg border bg-surface px-3 py-2 text-left text-sm transition focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none ${checkIn || checkOut ? "border-input text-foreground" : "border-input text-muted"}`}>
         {displayValue()}
       </button>
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 rounded-xl border border-gray-200 bg-white p-4 shadow-xl">
+        <div className="absolute left-0 top-full z-50 mt-2 rounded-xl border border-border bg-surface p-4 shadow-xl">
           <div className="mb-3 flex items-center justify-between">
-            <button onClick={goBack} className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700" aria-label="Previous month">
+            <button onClick={goBack} className="rounded p-1 text-muted hover:bg-surface-alt hover:text-foreground" aria-label="Previous month">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
             </button>
-            <div className="flex gap-8 text-sm font-semibold text-gray-900">
+            <div className="flex gap-8 text-sm font-semibold text-foreground">
               <span>{MONTH_NAMES[baseMonth - 1]} {baseYear}</span>
               <span>{MONTH_NAMES[rightMonth.month - 1]} {rightMonth.year}</span>
             </div>
-            <button onClick={goForward} className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700" aria-label="Next month">
+            <button onClick={goForward} className="rounded p-1 text-muted hover:bg-surface-alt hover:text-foreground" aria-label="Next month">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
             </button>
           </div>
@@ -128,7 +128,7 @@ export default function DateRangePicker({ checkIn, checkOut, onCheckInChange, on
             <MonthGrid year={baseYear} month={baseMonth} todayStr={todayStr} isInRange={isInRange} isStart={isStart} isEnd={isEnd} onDayClick={handleDayClick} onDayHover={setHoverDay} />
             <MonthGrid year={rightMonth.year} month={rightMonth.month} todayStr={todayStr} isInRange={isInRange} isStart={isStart} isEnd={isEnd} onDayClick={handleDayClick} onDayHover={setHoverDay} />
           </div>
-          <p className="mt-3 text-center text-xs text-gray-400">{selecting === "checkIn" ? "Select check-in date" : "Select check-out date"}</p>
+          <p className="mt-3 text-center text-xs text-muted">{selecting === "checkIn" ? "Select check-in date" : "Select check-out date"}</p>
         </div>
       )}
     </div>
@@ -141,7 +141,7 @@ function MonthGrid({ year, month, todayStr, isInRange, isStart, isEnd, onDayClic
   return (
     <div className="w-[252px]">
       <div className="grid grid-cols-7 gap-0 text-center">
-        {DAY_HEADERS.map((d) => (<span key={d} className="pb-2 text-xs font-medium text-gray-400">{d}</span>))}
+        {DAY_HEADERS.map((d) => (<span key={d} className="pb-2 text-xs font-medium text-muted">{d}</span>))}
       </div>
       <div className="grid grid-cols-7 gap-0">
         {Array.from({ length: offset }, (_, i) => (<span key={`e${i}`} />))}
@@ -154,7 +154,7 @@ function MonthGrid({ year, month, todayStr, isInRange, isStart, isEnd, onDayClic
           const isEndpoint = start || end;
           return (
             <button key={day} type="button" disabled={disabled} onClick={() => onDayClick(day)} onMouseEnter={() => onDayHover(day)}
-              className={`flex h-9 w-9 items-center justify-center text-sm transition-colors ${disabled ? "cursor-not-allowed text-gray-300" : isEndpoint ? "rounded-full bg-indigo-600 font-semibold text-white" : inRange ? "bg-indigo-100 text-indigo-700" : "text-gray-700 hover:rounded-full hover:bg-gray-100"}`}>
+              className={`flex h-9 w-9 items-center justify-center text-sm transition-colors ${disabled ? "cursor-not-allowed text-muted" : isEndpoint ? "rounded-full bg-primary font-semibold text-primary-fg" : inRange ? "bg-accent text-accent-fg" : "text-foreground hover:rounded-full hover:bg-surface-alt"}`}>
               {i + 1}
             </button>
           );

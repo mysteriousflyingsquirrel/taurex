@@ -45,7 +45,7 @@ export default function Apartments() {
     return (
       <div>
         <PageHeader title="Apartments" />
-        <p className="mt-4 text-sm text-gray-500">Loading apartments…</p>
+        <p className="mt-4 text-sm text-muted">Loading apartments…</p>
       </div>
     );
   }
@@ -62,8 +62,8 @@ export default function Apartments() {
       />
 
       {apartments.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-8 text-center">
-          <p className="text-gray-600">No apartments yet.</p>
+        <div className="mt-8 rounded-2xl border border-border bg-surface p-8 text-center">
+          <p className="text-muted">No apartments yet.</p>
           <div className="mt-3">
             <Button variant="primary" size="sm" onClick={() => navigate("/apartments/new")}>Create your first apartment</Button>
           </div>
@@ -71,63 +71,63 @@ export default function Apartments() {
       ) : (
         <>
           {/* Table — hidden on mobile */}
-          <div className="mt-6 hidden overflow-hidden rounded-xl border border-gray-200 bg-white md:block">
+          <div className="mt-6 hidden overflow-hidden rounded-xl border border-border bg-surface md:block">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-gray-200 bg-gray-50">
+              <thead className="border-b border-border bg-surface-alt">
                 <tr>
-                  <th className="px-6 py-3 font-medium text-gray-500">
+                  <th className="px-6 py-3 font-medium text-muted">
                     Apartment
                   </th>
-                  <th className="hidden px-6 py-3 font-medium text-gray-500 md:table-cell">
+                  <th className="hidden px-6 py-3 font-medium text-muted md:table-cell">
                     Guests
                   </th>
-                  <th className="hidden px-6 py-3 font-medium text-gray-500 md:table-cell">
+                  <th className="hidden px-6 py-3 font-medium text-muted md:table-cell">
                     Bedrooms
                   </th>
-                  <th className="hidden px-6 py-3 font-medium text-gray-500 lg:table-cell">
+                  <th className="hidden px-6 py-3 font-medium text-muted lg:table-cell">
                     m²
                   </th>
-                  <th className="hidden px-6 py-3 font-medium text-gray-500 md:table-cell">
+                  <th className="hidden px-6 py-3 font-medium text-muted md:table-cell">
                     Price/night
                   </th>
-                  <th className="hidden px-6 py-3 font-medium text-gray-500 md:table-cell">
+                  <th className="hidden px-6 py-3 font-medium text-muted md:table-cell">
                     Min Stay
                   </th>
-                  <th className="px-6 py-3 font-medium text-gray-500">
+                  <th className="px-6 py-3 font-medium text-muted">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {apartments.map((apt) => (
                   <tr
                     key={apt.slug}
-                    className="cursor-pointer hover:bg-gray-50"
+                    className="cursor-pointer hover:bg-surface-alt"
                     onClick={() => navigate(`/apartments/${apt.slug}`)}
                   >
                     <td className="px-6 py-4">
                       <div>
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-foreground">
                           {apt.name || apt.slug}
                         </p>
-                        <p className="text-xs text-gray-400">{apt.slug}</p>
+                        <p className="text-xs text-muted">{apt.slug}</p>
                       </div>
                     </td>
-                    <td className="hidden px-6 py-4 text-gray-600 md:table-cell">
+                    <td className="hidden px-6 py-4 text-muted md:table-cell">
                       {apt.facts.guests}
                     </td>
-                    <td className="hidden px-6 py-4 text-gray-600 md:table-cell">
+                    <td className="hidden px-6 py-4 text-muted md:table-cell">
                       {apt.facts.bedrooms}
                     </td>
-                    <td className="hidden px-6 py-4 text-gray-600 lg:table-cell">
+                    <td className="hidden px-6 py-4 text-muted lg:table-cell">
                       {apt.facts.sqm || "—"}
                     </td>
-                    <td className="hidden px-6 py-4 text-gray-600 md:table-cell">
+                    <td className="hidden px-6 py-4 text-muted md:table-cell">
                       {apt.priceDefault
                         ? formatMoney(apt.priceDefault, baseCurrency)
                         : "—"}
                     </td>
-                    <td className="hidden px-6 py-4 text-gray-600 md:table-cell">
+                    <td className="hidden px-6 py-4 text-muted md:table-cell">
                       {apt.minStayDefault
                         ? `${apt.minStayDefault} nights`
                         : "—"}
@@ -175,15 +175,15 @@ export default function Apartments() {
                     navigate(`/apartments/${apt.slug}`);
                   }
                 }}
-                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                className="rounded-xl border border-border bg-surface p-4 shadow-sm"
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-foreground">
                       {apt.name || apt.slug}
                     </p>
-                    <p className="text-xs text-gray-400">{apt.slug}</p>
-                    <p className="mt-1 text-sm text-gray-600">
+                    <p className="text-xs text-muted">{apt.slug}</p>
+                    <p className="mt-1 text-sm text-muted">
                       {apt.facts.guests} guests · {apt.facts.bedrooms} bedrooms
                       {apt.priceDefault
                         ? ` · ${formatMoney(apt.priceDefault, baseCurrency)}/night`

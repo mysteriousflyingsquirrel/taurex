@@ -107,45 +107,45 @@ export default function Settings() {
       <PageHeader title="Settings" />
 
       {/* Host Info */}
-      <div className="mt-8 rounded-2xl border border-gray-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-gray-900">Host Info</h2>
+      <div className="mt-8 rounded-2xl border border-border bg-surface p-6">
+        <h2 className="text-lg font-semibold text-foreground">Host Info</h2>
         <div className="mt-4 space-y-3">
           <div>
-            <p className="text-sm font-medium text-gray-500">Host ID</p>
-            <p className="text-sm text-gray-900">{host?.id}</p>
+            <p className="text-sm font-medium text-muted">Host ID</p>
+            <p className="text-sm text-foreground">{host?.id}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500">Name</p>
-            <p className="text-sm text-gray-900">{host?.name}</p>
+            <p className="text-sm font-medium text-muted">Name</p>
+            <p className="text-sm text-foreground">{host?.name}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500">Slug</p>
-            <p className="text-sm text-gray-900">{host?.slug}</p>
+            <p className="text-sm font-medium text-muted">Slug</p>
+            <p className="text-sm text-foreground">{host?.slug}</p>
           </div>
         </div>
       </div>
 
       {/* Billing */}
-      <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-gray-900">Billing</h2>
+      <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
+        <h2 className="text-lg font-semibold text-foreground">Billing</h2>
         {host?.billing?.unlocked ? (
-          <div className="mt-3 flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2">
-            <span className="h-2 w-2 rounded-full bg-green-500" />
-            <span className="text-sm font-medium text-green-700">
+          <div className="mt-3 flex items-center gap-2 rounded-lg bg-success-bg px-3 py-2">
+            <span className="h-2 w-2 rounded-full bg-success" />
+            <span className="text-sm font-medium text-success">
               Your account has full access — no charges apply.
             </span>
           </div>
         ) : (
           <div className="mt-3">
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-gray-900">
+              <span className="text-2xl font-bold text-foreground">
                 {formatMoney(getEffectivePrice(host?.billing), baseCurrency)}
               </span>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-muted">
                 / apartment / month
               </span>
             </div>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-muted">
               {apartmentCount} apartment{apartmentCount !== 1 ? "s" : ""} ·{" "}
               {formatMoney(getMonthlyTotal(host?.billing, apartmentCount), baseCurrency)} / month total
             </p>
@@ -154,9 +154,9 @@ export default function Settings() {
       </div>
 
       {/* Base Currency */}
-      <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-gray-900">Base Currency</h2>
-        <p className="mt-1 text-sm text-gray-500">
+      <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
+        <h2 className="text-lg font-semibold text-foreground">Base Currency</h2>
+        <p className="mt-1 text-sm text-muted">
           All prices are stored and displayed in this currency. Guests on your
           website will be able to convert prices to their preferred currency.
         </p>
@@ -168,16 +168,16 @@ export default function Settings() {
                 key={cur.code}
                 className={`flex cursor-pointer items-center justify-between rounded-xl border-2 px-4 py-3 transition ${
                   isActive
-                    ? "border-indigo-500 bg-indigo-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:border-input"
                 }`}
                 onClick={() => setCurrency(cur.code)}
               >
                 <div className="flex items-center gap-3">
-                  <span className="w-10 text-sm font-semibold text-gray-900">
+                  <span className="w-10 text-sm font-semibold text-foreground">
                     {cur.symbol}
                   </span>
-                  <span className="text-sm text-gray-700">
+                  <span className="text-sm text-foreground">
                     {cur.label} ({cur.code})
                   </span>
                 </div>
@@ -186,7 +186,7 @@ export default function Settings() {
                   name="baseCurrency"
                   checked={isActive}
                   onChange={() => setCurrency(cur.code)}
-                  className="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  className="h-4 w-4 border-input text-primary focus:ring-ring"
                 />
               </label>
             );
@@ -195,9 +195,9 @@ export default function Settings() {
       </div>
 
       {/* Languages */}
-      <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-gray-900">Languages</h2>
-        <p className="mt-1 text-sm text-gray-500">
+      <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
+        <h2 className="text-lg font-semibold text-foreground">Languages</h2>
+        <p className="mt-1 text-sm text-muted">
           Choose which languages are available for apartment descriptions and
           amenities on your website. English is always enabled as the default.
         </p>
@@ -210,17 +210,17 @@ export default function Settings() {
                 key={lang.code}
                 className={`flex cursor-pointer items-center justify-between rounded-xl border-2 px-4 py-3 transition ${
                   isActive
-                    ? "border-indigo-500 bg-indigo-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:border-input"
                 } ${isDefault ? "cursor-default" : ""}`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold uppercase text-gray-900">
+                  <span className="text-sm font-semibold uppercase text-foreground">
                     {lang.code}
                   </span>
-                  <span className="text-sm text-gray-700">{lang.label}</span>
+                  <span className="text-sm text-foreground">{lang.label}</span>
                   {isDefault && (
-                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                    <span className="rounded-full bg-surface-alt px-2 py-0.5 text-xs font-medium text-muted">
                       Default
                     </span>
                   )}
@@ -230,7 +230,7 @@ export default function Settings() {
                   checked={isActive}
                   disabled={isDefault}
                   onChange={() => toggleLanguage(lang.code)}
-                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50"
+                  className="h-4 w-4 rounded border-input text-primary focus:ring-ring disabled:opacity-50"
                 />
               </label>
             );

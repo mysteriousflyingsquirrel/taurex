@@ -76,18 +76,18 @@ export default function HostPage() {
 
   if (notFound) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-6 text-center">
-        <h1 className="text-6xl font-bold text-gray-300">404</h1>
-        <p className="mt-4 text-xl font-semibold text-gray-700">{t(lang, "notFound.host")}</p>
-        <a href="https://taurex.one" className="mt-6 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">{t(lang, "notFound.backToHome")}</a>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 text-center">
+        <h1 className="text-6xl font-bold text-muted">404</h1>
+        <p className="mt-4 text-xl font-semibold text-foreground">{t(lang, "notFound.host")}</p>
+        <a href="https://taurex.one" className="mt-6 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover">{t(lang, "notFound.backToHome")}</a>
       </div>
     );
   }
 
   if (loading || !host) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -95,37 +95,37 @@ export default function HostPage() {
   const cur = (host.baseCurrency ?? "CHF") as CurrencyCode;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <HostHeader host={host} basePath={`/${host.slug}`} />
       <main className="mx-auto max-w-7xl px-6 py-8">
-        <h1 className="text-2xl font-bold text-gray-900">{t(lang, "apartments.title")}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t(lang, "apartments.title")}</h1>
         <div className="mt-4">
           <AvailabilityBar checkIn={checkIn} checkOut={checkOut} guests={guests} onlyAvailable={onlyAvailable} lang={lang} onCheckInChange={setCheckIn} onCheckOutChange={setCheckOut} onGuestsChange={setGuests} onOnlyAvailableChange={setOnlyAvailable} onReset={resetFilters} />
         </div>
         {filteredApartments.length === 0 ? (
           <div className="mt-16 text-center">
-            <p className="text-lg text-gray-500">{apartments.length === 0 ? t(lang, "apartments.empty") : t(lang, "apartments.emptyFiltered")}</p>
+            <p className="text-lg text-muted">{apartments.length === 0 ? t(lang, "apartments.empty") : t(lang, "apartments.emptyFiltered")}</p>
           </div>
         ) : (
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {filteredApartments.map((apt) => (
-              <Link key={apt.id} href={`/${host.slug}/${apt.slug}?${searchParams.toString()}`} className="group overflow-hidden rounded-2xl bg-white shadow-lg transition hover:-translate-y-1 hover:shadow-2xl">
+              <Link key={apt.id} href={`/${host.slug}/${apt.slug}?${searchParams.toString()}`} className="group overflow-hidden rounded-2xl bg-surface shadow-lg transition hover:-translate-y-1 hover:shadow-2xl">
                 <div className="relative">
                   <ImageCarousel images={apt.images ?? []} height="h-56" emptyText={t(lang, "apartment.noImages")} />
                   {apt.priceDefault > 0 && (
-                    <div className="absolute right-3 top-3 rounded-lg bg-gray-900/80 px-3 py-1.5 text-sm font-semibold text-white backdrop-blur-sm">
-                      {formatMoney(apt.priceDefault, cur)} <span className="text-xs font-normal text-gray-300">{t(lang, "apartment.perNight")}</span>
+                    <div className="absolute right-3 top-3 rounded-lg bg-foreground/80 px-3 py-1.5 text-sm font-semibold text-background backdrop-blur-sm">
+                      {formatMoney(apt.priceDefault, cur)} <span className="text-xs font-normal opacity-80">{t(lang, "apartment.perNight")}</span>
                     </div>
                   )}
                 </div>
                 <div className="p-5">
-                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600">{apt.name}</h3>
+                  <h3 className="text-lg font-semibold text-foreground group-hover:text-primary">{apt.name}</h3>
                   {apt.facts && (
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">{apt.facts.guests} {t(lang, "apartment.guests")}</span>
-                      {apt.facts.bedrooms > 0 && <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">{apt.facts.bedrooms} {t(lang, "apartment.bedrooms")}</span>}
-                      {apt.facts.bathrooms > 0 && <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">{apt.facts.bathrooms} {t(lang, "apartment.bathrooms")}</span>}
-                      {apt.facts.sqm > 0 && <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">{apt.facts.sqm} {t(lang, "apartment.sqm")}</span>}
+                      <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-accent-fg">{apt.facts.guests} {t(lang, "apartment.guests")}</span>
+                      {apt.facts.bedrooms > 0 && <span className="rounded-full bg-surface-alt px-2.5 py-1 text-xs font-medium text-muted">{apt.facts.bedrooms} {t(lang, "apartment.bedrooms")}</span>}
+                      {apt.facts.bathrooms > 0 && <span className="rounded-full bg-surface-alt px-2.5 py-1 text-xs font-medium text-muted">{apt.facts.bathrooms} {t(lang, "apartment.bathrooms")}</span>}
+                      {apt.facts.sqm > 0 && <span className="rounded-full bg-surface-alt px-2.5 py-1 text-xs font-medium text-muted">{apt.facts.sqm} {t(lang, "apartment.sqm")}</span>}
                     </div>
                   )}
                 </div>
@@ -145,7 +145,7 @@ export default function HostPage() {
           if (pins.length === 0) return null;
           return (
             <div className="mt-12">
-              <h2 className="text-lg font-semibold text-gray-900">{t(lang, "apartments.map")}</h2>
+              <h2 className="text-lg font-semibold text-foreground">{t(lang, "apartments.map")}</h2>
               <div className="mt-3">
                 <Map pins={pins} className="h-80 w-full md:h-96" />
               </div>

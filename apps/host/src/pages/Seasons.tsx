@@ -375,8 +375,8 @@ export default function Seasons() {
   if (loading) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Seasons</h1>
-        <p className="mt-4 text-sm text-gray-500">Loading seasons…</p>
+        <h1 className="text-2xl font-bold text-foreground">Seasons</h1>
+        <p className="mt-4 text-sm text-muted">Loading seasons…</p>
       </div>
     );
   }
@@ -387,7 +387,7 @@ export default function Seasons() {
     <div className="pb-24">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Seasons</h1>
+        <h1 className="text-2xl font-bold text-foreground">Seasons</h1>
       </div>
 
       {/* Year Selector */}
@@ -402,8 +402,8 @@ export default function Seasons() {
             }}
             className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
               year === y
-                ? "bg-indigo-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-primary text-primary-fg"
+                : "bg-surface-alt text-foreground hover:bg-surface-alt"
             }`}
           >
             {y}
@@ -412,9 +412,9 @@ export default function Seasons() {
       </div>
 
       {/* Season List Panel */}
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="mt-6 rounded-xl border border-border bg-surface p-6 shadow-sm">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-900">
+          <h2 className="text-sm font-semibold text-foreground">
             Seasons for {year} ({seasonList.length})
           </h2>
           <div className="flex items-center gap-3">
@@ -449,8 +449,8 @@ export default function Seasons() {
                 }}
                 className={`group relative flex items-center gap-2 rounded-lg border-2 px-3 py-2 text-sm font-medium transition ${
                   selectedId === season.id
-                    ? "border-gray-900 shadow-md"
-                    : "border-transparent hover:border-gray-300"
+                    ? "border-foreground shadow-md"
+                    : "border-transparent hover:border-border"
                 }`}
                 style={
                   selectedId === season.id
@@ -469,7 +469,7 @@ export default function Seasons() {
                       e.stopPropagation();
                       handleEditSeason(season.id);
                     }}
-                    className="cursor-pointer text-gray-400 hover:text-gray-600"
+                    className="cursor-pointer text-muted hover:text-foreground"
                   >
                     ✏️
                   </span>
@@ -478,7 +478,7 @@ export default function Seasons() {
                       e.stopPropagation();
                       handleDelete(season.id);
                     }}
-                    className="cursor-pointer text-gray-400 hover:text-red-500"
+                    className="cursor-pointer text-muted hover:text-destructive"
                   >
                     🗑️
                   </span>
@@ -489,7 +489,7 @@ export default function Seasons() {
         )}
 
         {/* Instructions */}
-        <p className="mt-3 text-sm text-gray-500">
+        <p className="mt-3 text-sm text-muted">
           {selectedId && !selectionStart && seasons[selectedId] && (
             <>
               <strong>{seasons[selectedId].name}</strong> selected — click a day
@@ -532,8 +532,8 @@ export default function Seasons() {
       </div>
 
       {/* Legend */}
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-400">
+      <div className="mt-6 rounded-xl border border-border bg-surface p-4 shadow-sm">
+        <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
           {year} coverage
         </p>
         <div className="flex flex-wrap gap-4">
@@ -544,15 +544,15 @@ export default function Seasons() {
                 style={{ backgroundColor: season.color }}
               />
               {season.name}{" "}
-              <span className="text-gray-400">
+              <span className="text-muted">
                 ({dayCounts[season.id] ?? 0} days)
               </span>
             </div>
           ))}
           <div className="flex items-center gap-2 text-sm">
-            <span className="h-3 w-3 rounded-full bg-gray-200" />
+            <span className="h-3 w-3 rounded-full bg-surface-alt" />
             Default{" "}
-            <span className="text-gray-400">
+            <span className="text-muted">
               ({dayCounts["__default"]} days)
             </span>
           </div>
@@ -562,13 +562,13 @@ export default function Seasons() {
       {/* Modal */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
-            <h3 className="text-lg font-semibold text-gray-900">
+          <div className="w-full max-w-md rounded-xl bg-surface p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-foreground">
               {modal.mode === "create" ? "Create Season" : "Edit Season"}
             </h3>
             <div className="mt-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-foreground">
                   Name *
                 </label>
                 <input
@@ -578,16 +578,16 @@ export default function Seasons() {
                     setModal({ ...modal, name: e.target.value })
                   }
                   placeholder="e.g. High Season"
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                  className="mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
                 />
                 {modal.mode === "create" && modal.name && (
-                  <p className="mt-1 text-xs text-gray-400">
+                  <p className="mt-1 text-xs text-muted">
                     ID: {year}-{slugify(modal.name) || "—"}
                   </p>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-foreground">
                   Colour
                 </label>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -597,7 +597,7 @@ export default function Seasons() {
                       onClick={() => setModal({ ...modal, color: c })}
                       className={`h-8 w-8 rounded-full transition-transform ${
                         modal.color === c
-                          ? "scale-110 ring-2 ring-gray-900 ring-offset-2"
+                          ? "scale-110 ring-2 ring-ring ring-offset-2"
                           : "hover:scale-105"
                       }`}
                       style={{ backgroundColor: c }}
@@ -670,15 +670,15 @@ function MiniMonth({
 
   return (
     <div
-      className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
+      className="rounded-xl border border-border bg-surface p-3 shadow-sm"
       onMouseLeave={onMouseLeave}
     >
-      <p className="mb-2 text-center text-sm font-semibold text-gray-900">
+      <p className="mb-2 text-center text-sm font-semibold text-foreground">
         {MONTH_NAMES[month - 1]}
       </p>
       <div className="grid grid-cols-7 gap-0.5 text-center">
         {DAY_HEADERS.map((d) => (
-          <span key={d} className="text-[10px] text-gray-400">
+          <span key={d} className="text-[10px] text-muted">
             {d}
           </span>
         ))}
@@ -692,15 +692,15 @@ function MiniMonth({
           const isPreview = previewDays.has(day);
           const isStart = selectionStart === day;
 
-          let bg = "bg-gray-100";
-          let text = "text-gray-700";
+          let bg = "bg-surface-alt";
+          let text = "text-foreground";
 
           if (season) {
             bg = "";
-            text = "text-white";
+            text = "text-primary-fg";
           } else if (isPreview && selectedId && seasons[selectedId]) {
             bg = "";
-            text = "text-white";
+            text = "text-primary-fg";
           }
 
           return (
@@ -708,8 +708,8 @@ function MiniMonth({
               key={day}
               onClick={() => onDayClick(day)}
               onMouseEnter={() => onDayHover(day)}
-              className={`h-7 w-7 rounded text-xs font-medium transition ${bg} ${text} hover:ring-2 hover:ring-gray-400 hover:ring-offset-1 ${
-                isStart ? "ring-2 ring-gray-900 ring-offset-1" : ""
+              className={`h-7 w-7 rounded text-xs font-medium transition ${bg} ${text} hover:ring-2 hover:ring-ring hover:ring-offset-1 ${
+                isStart ? "ring-2 ring-ring ring-offset-1" : ""
               }`}
               style={
                 season

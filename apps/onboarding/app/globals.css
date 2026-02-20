@@ -1,1 +1,90 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --surface: #f8fafc;
+  --surface-alt: #f1f5f9;
+  --border: #e2e8f0;
+  --input: #cbd5e1;
+  --muted: #64748b;
+  --primary: #0ea5e9;
+  --primary-fg: #ffffff;
+  --primary-hover: #0284c7;
+  --accent: #06b6d4;
+  --accent-fg: #ffffff;
+  --accent-hover: #0891b2;
+  --ring: #0ea5e9;
+  --destructive: #ef4444;
+  --destructive-bg: #fef2f2;
+  --success: #16a34a;
+  --success-bg: #f0fdf4;
+  --warning: #d97706;
+  --warning-bg: #fffbeb;
+}
+
+.dark {
+  --background: #0b1120;
+  --foreground: #f1f5f9;
+  --surface: #0f1d32;
+  --surface-alt: #162844;
+  --border: #1e3a5f;
+  --input: #334155;
+  --muted: #94a3b8;
+  --primary: #38bdf8;
+  --primary-fg: #0b1120;
+  --primary-hover: #0ea5e9;
+  --accent: #22d3ee;
+  --accent-fg: #0b1120;
+  --accent-hover: #06b6d4;
+  --ring: #38bdf8;
+  --destructive: #f87171;
+  --destructive-bg: #451a1a;
+  --success: #4ade80;
+  --success-bg: #14291a;
+  --warning: #fbbf24;
+  --warning-bg: #422006;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--surface-alt);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-primary-hover: var(--primary-hover);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-hover: var(--accent-hover);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+  --color-destructive-bg: var(--destructive-bg);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+}
+
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+
+  button,
+  a,
+  [role="button"],
+  select,
+  summary,
+  [type="checkbox"],
+  [type="radio"],
+  label[for] {
+    cursor: pointer;
+  }
+}

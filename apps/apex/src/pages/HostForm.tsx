@@ -127,10 +127,10 @@ export default function HostForm() {
   if (loading) {
     return (
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-foreground">
           {isEdit ? "Edit Host" : "Create Host"}
         </h1>
-        <p className="mt-4 text-sm text-gray-500">Loading…</p>
+        <p className="mt-4 text-sm text-muted">Loading…</p>
       </div>
     );
   }
@@ -143,10 +143,10 @@ export default function HostForm() {
         onDiscard={confirmDiscard}
       />
 
-      <h1 className="text-2xl font-bold text-gray-900">
+      <h1 className="text-2xl font-bold text-foreground">
         {isEdit ? "Edit Host" : "Create Host"}
       </h1>
-      <p className="mt-1 text-sm text-gray-600">
+      <p className="mt-1 text-sm text-muted">
         {isEdit
           ? `Editing host: ${slug}`
           : "Set up a new host on the platform"}
@@ -155,17 +155,17 @@ export default function HostForm() {
       <form
         id="host-form"
         onSubmit={handleSubmit}
-        className="mt-8 max-w-2xl space-y-6 rounded-xl border border-gray-200 bg-white p-6"
+        className="mt-8 max-w-2xl space-y-6 rounded-xl border border-border bg-surface p-6"
       >
         {error && (
-          <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="rounded-lg bg-destructive-bg px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}
 
         {/* Name */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-foreground">
             Name *
           </label>
           <input
@@ -178,21 +178,21 @@ export default function HostForm() {
               }
             }}
             placeholder="e.g. Mountain Retreats"
-            className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+            className="mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
           />
         </div>
 
         {/* Slug */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-foreground">
             Slug *
           </label>
           {isEdit ? (
             <div className="mt-1">
-              <code className="rounded bg-gray-100 px-3 py-2 text-sm text-gray-600">
+              <code className="rounded bg-surface-alt px-3 py-2 text-sm text-muted">
                 {slug}
               </code>
-              <p className="mt-1 text-xs text-gray-400">
+              <p className="mt-1 text-xs text-muted">
                 Slug cannot be changed after creation.
               </p>
             </div>
@@ -203,9 +203,9 @@ export default function HostForm() {
                 value={slug}
                 onChange={(e) => setSlug(slugify(e.target.value))}
                 placeholder={slugify(name) || "e.g. mountain-retreats"}
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 focus:outline-none"
+                className="mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
               />
-              <p className="mt-1 text-xs text-gray-400">
+              <p className="mt-1 text-xs text-muted">
                 Public URL: taurex.one/{slug || slugify(name) || "…"}
               </p>
             </>
@@ -214,7 +214,7 @@ export default function HostForm() {
 
         {/* Languages */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-foreground">
             Languages *
           </label>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -237,7 +237,7 @@ export default function HostForm() {
 
         {/* Base Currency */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-foreground">
             Base Currency *
           </label>
           <div className="mt-2 flex flex-wrap gap-2">

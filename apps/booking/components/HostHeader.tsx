@@ -22,18 +22,18 @@ export default function HostHeader({ host, basePath }: HostHeaderProps) {
   };
 
   return (
-    <nav className="sticky top-0 z-40 border-b border-gray-200 bg-white/80 backdrop-blur-md">
+    <nav className="sticky top-0 z-40 border-b border-border bg-surface/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <Link href={`${basePath}?${searchParams.toString()}`} className="text-xl font-bold tracking-tight text-gray-900">
+        <Link href={`${basePath}?${searchParams.toString()}`} className="text-xl font-bold tracking-tight text-foreground">
           {host.name}
         </Link>
         {showSwitcher && (
-          <div className="flex items-center gap-1 rounded-lg bg-gray-100 p-1">
+          <div className="flex items-center gap-1 rounded-lg bg-surface-alt p-1">
             {host.languages.map((code) => {
               const label = AVAILABLE_LANGUAGES.find((l) => l.code === code)?.code.toUpperCase() ?? code.toUpperCase();
               const isActive = code === lang;
               return (
-                <Link key={code} href={`?${buildSearch({ lang: code })}`} className={`rounded-md px-3 py-1 text-xs font-semibold transition ${isActive ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+                <Link key={code} href={`?${buildSearch({ lang: code })}`} className={`rounded-md px-3 py-1 text-xs font-semibold transition ${isActive ? "bg-surface text-foreground shadow-sm" : "text-muted hover:text-foreground"}`}>
                   {label}
                 </Link>
               );
