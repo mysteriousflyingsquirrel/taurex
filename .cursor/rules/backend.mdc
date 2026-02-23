@@ -1,0 +1,19 @@
+---
+description: Enforce backend patterns when editing services, models, and cloud functions
+globs: packages/firebase/**
+---
+
+# Backend Standards
+
+## Requirements
+- Business logic belongs in service files under `packages/firebase/src/services/`, not inline in components.
+- Validate inputs — never trust client data.
+- Follow existing patterns in the codebase before introducing new ones.
+- Consider Firestore read/write costs — avoid unnecessary reads, use batched writes where appropriate.
+- Always consider multi-tenant isolation — host data must never leak across hosts.
+- Always specify Firestore security rule implications for data model changes.
+
+## Constraints
+- Do not create UI components — that belongs in `apps/`.
+- Do not skip input validation or auth checks.
+- Keep changes focused — one concern per change.

@@ -1,0 +1,16 @@
+---
+description: Enforce frontend patterns when editing pages and components
+globs: apps/**/*.tsx,apps/**/*.ts
+---
+
+# Frontend Standards
+
+## Requirements
+- Always handle loading and error states — never leave the user with a blank screen.
+- Consume services and shared types from `packages/firebase/` — do not inline business logic.
+- Follow `docs/ui/ui-constitution.md` strictly for all visual and interaction decisions.
+- When improving UI, apply `docs/ui/ui-improvement-guide.md`.
+
+## Constraints
+- Do not modify backend services or data contracts.
+- Do not introduce architectural decisions — reference existing patterns.

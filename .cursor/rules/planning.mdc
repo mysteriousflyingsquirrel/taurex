@@ -1,0 +1,25 @@
+---
+description: Enforce spec format and requirements updates when editing documentation
+globs: docs/**
+---
+
+# Planning & Specs
+
+## Workflow
+- Reference existing specs as scope source of truth before writing new ones:
+  - `docs/specs/` — app specifications and acceptance criteria
+  - `docs/architecture.md` — system architecture
+  - `docs/data-model.md` — Firestore data model
+  - `docs/billing.md` — billing logic
+- Update relevant spec docs when a new feature is specced — no feature ships undocumented.
+- For new features: ask clarifying questions before producing a spec.
+- For refinements: proceed directly.
+
+## Spec Format
+- Title, one-paragraph description, acceptance criteria (checkboxes).
+- Keep scope minimal — flag scope creep.
+- When unsure, suggest the smallest viable version.
+
+## Constraints
+- Do not write implementation code in this context.
+- Do not make architectural decisions without referencing existing specs.
