@@ -2,6 +2,10 @@ import { useCallback, useState, useEffect } from "react";
 import {
   updateHost,
   fetchApartments,
+  uploadHostLogo,
+  uploadHostBanner,
+  removeHostLogo,
+  removeHostBanner,
   AVAILABLE_LANGUAGES,
   AVAILABLE_CURRENCIES,
   getEffectivePrice,
@@ -13,6 +17,7 @@ import {
 import { useHost } from "../contexts/HostContext";
 import PageHeader from "../components/PageHeader";
 import Button from "../components/Button";
+import ImageUpload from "../components/ImageUpload";
 import StickyFormFooter from "../components/StickyFormFooter";
 import DiscardChangesModal from "../components/DiscardChangesModal";
 import { useToast } from "../components/Toast";
@@ -122,6 +127,54 @@ export default function Settings() {
             <p className="text-sm font-medium text-muted">Slug</p>
             <p className="text-sm text-foreground">{host?.slug}</p>
           </div>
+        </div>
+      </div>
+
+      {/* Branding */}
+      <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
+        <h2 className="text-lg font-semibold text-foreground">Branding</h2>
+        <p className="mt-1 text-sm text-muted">
+          Upload a logo and banner image for your public booking page.
+        </p>
+        <div className="mt-4 space-y-6">
+          <ImageUpload
+            currentUrl={host?.logoUrl}
+            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+            maxWidth={512}
+            maxHeight={512}
+            maxSizeBytes={500 * 1024}
+            label="Logo"
+            previewClass="h-16 w-16 rounded-lg object-contain"
+            onUpload={async (file) => {
+              await uploadHostLogo(hostId, file);
+              await refreshHost();
+              toast.success("Logo uploaded.");
+            }}
+            onRemove={async () => {
+              await removeHostLogo(hostId);
+              await refreshHost();
+              toast.success("Logo removed.");
+            }}
+          />
+          <ImageUpload
+            currentUrl={host?.bannerUrl}
+            accept="image/png,image/jpeg,image/webp"
+            maxWidth={1920}
+            maxHeight={600}
+            maxSizeBytes={2 * 1024 * 1024}
+            label="Banner"
+            previewClass="h-24 w-full max-w-md rounded-lg object-cover"
+            onUpload={async (file) => {
+              await uploadHostBanner(hostId, file);
+              await refreshHost();
+              toast.success("Banner uploaded.");
+            }}
+            onRemove={async () => {
+              await removeHostBanner(hostId);
+              await refreshHost();
+              toast.success("Banner removed.");
+            }}
+          />
         </div>
       </div>
 

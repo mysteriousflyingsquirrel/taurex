@@ -64,15 +64,29 @@ Supported languages for UI strings: `en`, `de`, `fr`, `it`.
 
 ### 5.2 Layout
 
-**Header**:
-- Host name (left)
-- Language switcher pills (right, only when 2+ languages)
+**When `host.bannerUrl` is set** — hero banner layout:
 
-**Body**: Full-width, `max-w-7xl` centred container.
+1. **Hero section** (relative container, ~420px tall):
+   - Banner image as full-width background (`object-cover`, `center`)
+   - Gradient overlay: dark at top (for header readability) fading to white at bottom
+   - Header (transparent background) at the top with:
+     - Host logo (40px height, if `host.logoUrl` set) + host name (left-aligned)
+     - Language switcher pills (right-aligned)
+   - AvailabilityBar positioned at the bottom of the hero, overlapping the gradient transition
+
+2. **Content section** below:
+   - "Our Apartments" title
+   - Apartment grid
+   - Map section
+
+**When `host.bannerUrl` is NOT set** — fallback flat layout:
+
+- Header: host logo (if set) + host name (left), language switcher (right), surface background with border
+- Body: `max-w-7xl` centred container with title, filter bar, grid, map
 
 ### 5.3 Availability Bar
 
-White card above apartment grid with all filter controls in a responsive row.
+White card (on hero layout: positioned on the banner; on flat layout: above apartment grid) with all filter controls in a responsive row.
 
 | Control | Type | URL Param | Details |
 |---|---|---|---|
@@ -332,7 +346,9 @@ Key behaviours:
 
 ### Host Home Page
 - [ ] Host is resolved via `fetchHostBySlug(hostSlug)`; Host Not Found page shown when not found.
-- [ ] Header shows host name (left) and language switcher (right when 2+ languages).
+- [ ] Header shows host logo (if `logoUrl` set, 40px height) + host name (left) and language switcher (right when 2+ languages).
+- [ ] When `bannerUrl` is set: hero section with banner background, gradient overlay (dark top to white bottom), transparent header, AvailabilityBar on the banner.
+- [ ] When `bannerUrl` is NOT set: falls back to flat layout (surface header, inline filter bar).
 - [ ] Availability bar shows DateRangePicker with `?checkIn` and `?checkOut` in URL; dates display as `dd.mm.yyyy`.
 - [ ] Availability bar shows GuestStepper with `?guests=N` (min 1, max 20); param omitted when 1.
 - [ ] "Show only available" checkbox is disabled until both dates are selected (deferred).
@@ -347,7 +363,7 @@ Key behaviours:
 ### Apartment Detail
 - [ ] Page resolves host then `fetchApartmentBySlug(hostId, apartmentSlug)`; Apartment Not Found when not found.
 - [ ] Min stay uses `fetchSeasons(hostId)`.
-- [ ] Header matches host home; breadcrumb is Host name → Apartment name.
+- [ ] Header matches host home (logo + name, no banner on detail page); breadcrumb is Host name → Apartment name.
 - [ ] Image gallery: images from `images[]`, cross-fade 500ms, arrow + dot navigation, touch swipe; heights 320px (mobile), 384px (md), 500px (lg); grey empty state when no images.
 - [ ] Name displayed as large heading; price as "{currency} {priceDefault} / night" below.
 - [ ] Facts grid (2→3→4 cols): white rounded cards, no icons — Guests, Bedrooms, Double/Single beds (if >0), Bathrooms, m² (if >0).

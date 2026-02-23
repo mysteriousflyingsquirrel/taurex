@@ -54,6 +54,20 @@ export default function ApartmentPage() {
       .catch(() => { setNotFound("host"); setLoading(false); });
   }, [hostSlug, apartmentSlug]);
 
+  useEffect(() => {
+    if (!host) return;
+    document.title = apartment ? `${apartment.name} – ${host.name}` : host.name;
+    const existing = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+    if (host.logoUrl) {
+      const link = existing ?? document.createElement("link");
+      link.setAttribute("rel", "icon");
+      link.setAttribute("href", host.logoUrl);
+      if (!existing) document.head.appendChild(link);
+    } else if (existing) {
+      existing.remove();
+    }
+  }, [host, apartment]);
+
   if (notFound === "host") {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 text-center">

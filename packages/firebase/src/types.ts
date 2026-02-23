@@ -58,6 +58,8 @@ export type Host = {
   languages: LanguageCode[]; // e.g. ["en", "de"], default ["en"]
   baseCurrency: CurrencyCode; // e.g. "CHF", default "CHF"
   billing?: HostBilling;
+  logoUrl?: string;
+  bannerUrl?: string;
 };
 
 export type UserProfile = {

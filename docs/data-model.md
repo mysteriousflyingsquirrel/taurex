@@ -25,6 +25,8 @@ Firestore Root
 │       ├── slug: string
 │       ├── languages: array<string>           # e.g. ["en", "de"]. Default ["en"].
 │       ├── baseCurrency: string               # e.g. "CHF". Default "CHF".
+│       ├── logoUrl: string                    # (optional) Firebase Storage download URL, max 512×512px
+│       ├── bannerUrl: string                  # (optional) Firebase Storage download URL, max 1920×600px
 │       │
 │       ├── apartments/                          # Subcollection
 │       │   └── {slug}/                          # Document (ID = apartment slug)
@@ -85,10 +87,15 @@ Firestore Root
 
 ## 2. Firebase Storage Structure
 
-Images are scoped by host and apartment.
+Images are scoped by host and apartment. Branding assets (logo, banner) are scoped by host.
 
 ```
 Firebase Storage Root
+│
+├── branding/                                    # Host branding assets
+│   └── {hostId}/
+│       ├── logo.{ext}                           # Host logo (max 512×512px, max 500 KB)
+│       └── banner.{ext}                         # Host banner (max 1920×600px, max 2 MB)
 │
 ├── images/                                      # Thumbnails (~768px wide)
 │   └── {hostId}/
@@ -123,6 +130,7 @@ Firebase Storage Root
 | **Descriptions & amenities** | Keyed by language code. Only languages from host's `languages` array are shown in the UI. |
 | **Autosave** | All edit pages use debounced autosave (1.5–2s). New apartment creation still requires manual "Create" action. |
 | **Images stored as URLs** | `images[].src` and `images[].srcBig` contain full Firebase Storage download URLs. |
+| **Branding images** | `logoUrl` and `bannerUrl` on the host document contain full Firebase Storage download URLs. Uploaded via `branding/{hostId}/` storage path. Logo max 512×512px / 500 KB. Banner max 1920×600px / 2 MB. |
 | **Address normalization** | Location addresses are normalized via Nominatim to "Street Nr, ZIP City" format. |
 
 ---
@@ -182,6 +190,8 @@ type Host = {
   languages: LanguageCode[]
   baseCurrency: CurrencyCode
   billing?: HostBilling
+  logoUrl?: string
+  bannerUrl?: string
 }
 
 type HostBilling = {
@@ -258,6 +268,14 @@ All service functions live in `@taurex/firebase` and are shared across applicati
 | `setSeason` | `(hostId, seasonId, data) → Promise<void>` | Create or overwrite season |
 | `deleteSeason` | `(hostId, seasonId) → Promise<void>` | Delete season |
 | `copySeasonsToYear` | `(hostId, fromYear, toYear) → Promise<Record<string, Season>>` | Copy seasons |
+
+### Storage Service
+
+| Function | Signature | Description |
+|---|---|---|
+| `uploadHostLogo` | `(hostId, file) → Promise<string>` | Upload host logo, returns download URL |
+| `uploadHostBanner` | `(hostId, file) → Promise<string>` | Upload host banner, returns download URL |
+| `deleteStorageFile` | `(path) → Promise<void>` | Delete a file by storage path |
 
 ### User Service
 

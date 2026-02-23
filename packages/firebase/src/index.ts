@@ -63,3 +63,11 @@ export {
   deleteSeason,
   copySeasonsToYear,
 } from "./services/seasonService";
+
+export {
+  uploadHostLogo,
+  uploadHostBanner,
+  removeHostLogo,
+  removeHostBanner,
+  deleteStorageFile,
+} from "./services/storageService";

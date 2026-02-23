@@ -297,6 +297,28 @@ Card below calendar showing per-season day counts for the displayed year + "Defa
 
 Read-only display: Host ID, Name, Slug.
 
+### Branding
+
+Allows the host to upload a logo and banner image for their public booking page.
+
+**Logo**:
+- Preview of current logo (or placeholder icon)
+- "Upload" button opens file picker; "Remove" button deletes the image
+- Accepted formats: PNG, JPEG, WebP, SVG
+- Max dimensions: 512×512px; max file size: 500 KB
+- Stored at `branding/{hostId}/logo.{ext}` in Firebase Storage
+- Download URL saved to `hosts/{hostId}.logoUrl`
+
+**Banner**:
+- Preview of current banner (or placeholder)
+- "Upload" button opens file picker; "Remove" button deletes the image
+- Accepted formats: PNG, JPEG, WebP
+- Max dimensions: 1920×600px; max file size: 2 MB
+- Stored at `branding/{hostId}/banner.{ext}` in Firebase Storage
+- Download URL saved to `hosts/{hostId}.bannerUrl`
+
+Both uploads save immediately (no dirty/save flow). On remove, the storage file is deleted and the host field is removed.
+
 ### Base Currency
 
 - Description: "All prices are stored and displayed in this currency. Guests on your website will be able to convert prices to their preferred currency."
@@ -346,6 +368,9 @@ Seasons Page
 
 Settings Page
   └── updateHost(hostId, { languages, baseCurrency })  ← autosave
+  └── uploadHostLogo(hostId, file)                     ← immediate
+  └── uploadHostBanner(hostId, file)                   ← immediate
+  └── deleteStorageFile(path)                          ← immediate
   └── refreshHost()
 ```
 
@@ -415,6 +440,12 @@ Settings Page
 
 ### Settings
 - [ ] Host info displayed read-only: Host ID, Name, Slug.
+- [ ] Branding section shows logo preview (or placeholder) with Upload and Remove buttons.
+- [ ] Logo upload validates max 512×512px, max 500 KB, accepted formats: PNG, JPEG, WebP, SVG.
+- [ ] Branding section shows banner preview (or placeholder) with Upload and Remove buttons.
+- [ ] Banner upload validates max 1920×600px, max 2 MB, accepted formats: PNG, JPEG, WebP.
+- [ ] Upload saves file to Firebase Storage and persists download URL to host document immediately.
+- [ ] Remove deletes file from Storage and removes URL from host document.
 - [ ] Base currency: description shown; radio cards CHF (default), EUR, USD, GBP; selection autosaves (1s debounce) via `updateHost(hostId, { baseCurrency })`.
 - [ ] Price labels across host app use `baseCurrency` from context.
 - [ ] Languages: description shown; EN default and always on (cannot be removed); DE, FR, IT as toggle cards; changes autosave (1s debounce) via `updateHost(hostId, { languages, baseCurrency })`.
