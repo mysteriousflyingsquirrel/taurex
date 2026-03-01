@@ -1,0 +1,39 @@
+---
+description: Apply for feature-sized requests, debugging, and recurring workflow mistakes. Enforce clanker delegation order and lightweight-vs-heavy routing.
+alwaysApply: false
+---
+
+# Clanker Orchestration
+
+## When This Rule Applies
+- Requests that imply a new feature, debugging flow, or multi-step implementation.
+- Requests where the user expects orchestration across planning, implementation, and validation.
+- Requests where repeated agent behavior errors suggest guidance assets should be adjusted.
+
+## Routing Logic
+- For feature-sized work (multi-file, cross-app, sequencing-heavy, or ambiguous):
+  1. Start with `pm-clanker` for scope and ordered execution.
+  2. Add `architecture-clanker` before implementation when data model, tenancy, auth, contracts, or rules may be impacted.
+  3. Delegate implementation to `ui-clanker` and/or `backend-clanker`.
+  4. Run `test-clanker` for evidence.
+  5. Run `verify-clanker` before sign-off.
+
+- For quick fixes (small, clear scope):
+  - Skip `pm-clanker` unless scope expands.
+  - Route directly to `ui-clanker` or `backend-clanker`.
+  - Use `test-clanker` for focused validation.
+
+- For debugging (root cause unclear):
+  1. Start with `debug-clanker`.
+  2. If code changes are needed, hand off to `ui-clanker`/`backend-clanker`.
+  3. Validate with `test-clanker` and `verify-clanker`.
+
+## Guidance-Maintenance Trigger
+- If an error pattern is caused by missing/unclear AI guidance (rules, skills, subagents), invoke `rule-agent-maintainer`.
+- Treat guidance maintenance as explicit work output (not silent background behavior).
+- Keep guidance updates minimal, focused, and aligned to current source-of-truth docs.
+
+## Guardrails
+- Keep scope aligned to user intent; do not force heavyweight orchestration for trivial tasks.
+- Preserve multi-tenant isolation and call out rules/security implications on backend/data-model changes.
+- Keep date invariant explicit in planning and verification: display `dd-mm-yyyy`, storage/query `YYYY-MM-DD`.
