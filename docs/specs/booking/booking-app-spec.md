@@ -16,11 +16,11 @@ Routing is path-based: `booking.taurex.one/{hostSlug}` = host pages, `booking.ta
 | Language | TypeScript |
 | Styling | Tailwind CSS v4 |
 | Routing | React Router DOM |
-| Data | Firestore via `@taurex/firebase` (read-only) |
+| Data | Firestore via `@taurex/firebase` + Cloud Functions for booking requests |
 | Maps | Leaflet / react-leaflet + OpenStreetMap |
 | Images | Firebase Storage URLs, `<img>` with lazy loading |
 
-No authentication required. All Firestore reads are public.
+No authentication required. Firestore reads are public; booking request writes are routed via validated Cloud Functions.
 
 ---
 
@@ -191,24 +191,40 @@ Source: `amenities[lang][]`. Falls back to `amenities.en` if current language un
 
 If `location.address` is set, show address text in a white card. Below the address, an embedded Leaflet map (height ~200px) centred on the apartment's `location.lat` / `location.lng` with a single marker pin. Map is interactive (zoom/pan). Only shown when valid lat/lng exist.
 
-### 6.8 Availability & Booking
+### 6.8 Availability & Booking (Booking Engine v1)
 
 Side-by-side section (`lg:grid-cols-5 gap-8`) below all content sections.
 
 **Availability (3/5 width)**:
 - Heading: "Availability"
-- Placeholder: Rounded white card (`h-48`) with "Coming soon…" text centred
-- Phase 2: Calendar widget with date range selection, iCal integration
+- Interactive date-range selection is supported directly on the apartment page.
+- Date selection is validated against public availability projection (`calendar.manualBlocks` + `calendar.importedBusyRanges` + conflicts).
+- Invalid ranges (past dates, busy ranges, conflict ranges, check-out <= check-in) are rejected with inline guidance.
+- If a range is valid, booking panel updates immediately with nights and pricing context.
 
 **Booking (2/5 width)**:
-- Heading: "Booking"
+- Heading: "Booking request"
 - White rounded card containing:
-  1. **Selected dates** — Read from `?checkIn` and `?checkOut` URL params (carried from host page). Dates displayed in `dd-mm-yyyy` format. If no dates, show italic hint: "Please select your dates on the apartment listing page to see pricing."
-  2. **Approximate total** — `nights × priceDefault`, with disclaimer "Approximate estimate. Final price at the discretion of the host."
-  3. **Best price guarantee** — Indigo banner: "Best price guaranteed! Book directly through our booking request and get the cheapest price available." with checkmark icon
-  4. **Minimum stay** — "Minimum stay: X nights" (if >1)
-  5. **Booking Request** button — Primary indigo, disabled (no function yet)
-  6. **External booking links** — Outline buttons from `bookingLinks[]`, each opens `url` in new tab
+  1. **Selected dates** — Source of truth is selected range from apartment availability selector or listing-page URL params. Dates displayed in `dd-mm-yyyy`.
+  2. **Approximate total** — `nights × effective nightly price` (promotion/season aware where applicable), with disclaimer "Approximate estimate. Final price at the discretion of the host."
+  3. **Best price guarantee** — Indigo banner with checkmark icon.
+  4. **Minimum stay validation** — Booking request CTA is enabled only when range satisfies effective min-stay (season override if matched, else default).
+  5. **Booking Request** button — Enabled only when date range and min-stay are valid.
+  6. **Confirmation popup** — Before submit, guest reviews stay + pricing summary and enters `name` + `email` (required).
+  7. **Submit** — Creates a `pending` booking request via Cloud Function; success state shown in-app.
+  8. **External booking links** — Outline buttons from `bookingLinks[]`, each opens `url` in new tab.
+
+### 6.11 Booking Request Workflow
+
+1. Guest chooses check-in/check-out (listing or apartment page selector).
+2. App validates:
+   - date range is complete and chronological
+   - range does not overlap unavailable/conflict dates
+   - nights meet effective min-stay
+3. Guest opens confirmation popup, provides required identity fields, and submits.
+4. Backend stores request with status `pending` under host scope.
+5. Host handles request in host app `Bookings` page and sets `accepted` or `declined`.
+6. Guest receives host decision email (queued through Firebase Trigger Email extension).
 
 ### 6.9 More Apartments
 
@@ -290,16 +306,12 @@ Guest-side currency conversion (display-only) is a future feature.
 
 ---
 
-## 10. Phase 2 Features (Deferred)
+## 10. Deferred Features
 
 These features are planned but not in the initial implementation:
 
 | Feature | Notes |
 |---|---|
-| **Availability calendar** | Full calendar with iCal integration showing booked/available dates |
-| **"Only available" filter** | Requires iCal availability data |
-| **Booking modal** | Name + guest count → generates mailto link or sends booking request |
-| **iCal availability API** | Fetch + parse external iCal feeds, merge booked ranges (Cloud Function) |
 | **Custom domains** | Host resolves by hostname instead of URL slug |
 
 ---
@@ -381,8 +393,12 @@ Key behaviours:
 - [ ] Description from `descriptions[lang]` with fallback to `en`; rendered with `whitespace-pre-line`.
 - [ ] Amenities grid (2–4 cols): white rounded cards, no icons; source `amenities[lang]` with fallback to `en`.
 - [ ] Location: address in card when set; Leaflet map ~200px with single marker when lat/lng valid; map interactive (zoom/pan).
-- [ ] Availability section shows placeholder "Coming soon…" card (deferred).
-- [ ] Booking section: selected dates from URL in `dd-mm-yyyy` or hint to select on listing; approximate total = nights × priceDefault with disclaimer; best price guarantee banner; minimum stay from seasons when >1; Booking Request button disabled; external `bookingLinks[]` open in new tab.
+- [ ] Availability section provides date-range selection and blocks invalid busy/conflict/past ranges.
+- [ ] Booking section: selected dates displayed in `dd-mm-yyyy`; approximate total updates from selected range; min-stay rule is validated (season override first, fallback to default).
+- [ ] Booking Request button is enabled only for valid range + min-stay.
+- [ ] Confirmation popup requires guest `name` and `email` and shows stay + pricing summary before submit.
+- [ ] Successful submit creates a host-scoped booking request with `pending` status and shows success state.
+- [ ] External `bookingLinks[]` still open in new tab.
 - [ ] "More apartments" row: pill links to other host apartments (excluding current), each to `/{hostSlug}/{apartmentSlug}`.
 - [ ] Apartment Not Found shows message and link back to `/{hostSlug}`.
 
@@ -405,9 +421,5 @@ Key behaviours:
 - [ ] Amenities grid is responsive (2–4 cols).
 - [ ] Booking links layout: stacked on small screens, inline on larger.
 
-### Phase 2 (deferred)
-- [ ] Availability calendar with iCal integration (deferred).
-- [ ] "Show only available" filter wired to availability data (deferred).
-- [ ] Booking modal / booking request flow (deferred).
-- [ ] iCal availability API (Cloud Function) (deferred).
+### Deferred
 - [ ] Custom domains for host resolution (deferred).

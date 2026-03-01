@@ -8,6 +8,9 @@ interface DateRangePickerProps {
   checkOut: string;
   onCheckInChange: (date: string) => void;
   onCheckOutChange: (date: string) => void;
+  isDateDisabled?: (date: string) => boolean;
+  getDayState?: (date: string) => "available" | "unavailable" | "default";
+  inline?: boolean;
   placeholderFrom?: string;
   placeholderTo?: string;
 }
@@ -38,7 +41,17 @@ function addMonths(year: number, month: number, count: number): { year: number; 
   return { year: year + Math.floor(m / 12), month: (((m % 12) + 12) % 12) + 1 };
 }
 
-export default function DateRangePicker({ checkIn, checkOut, onCheckInChange, onCheckOutChange, placeholderFrom = "dd-mm-yyyy", placeholderTo = "dd-mm-yyyy" }: DateRangePickerProps) {
+export default function DateRangePicker({
+  checkIn,
+  checkOut,
+  onCheckInChange,
+  onCheckOutChange,
+  isDateDisabled,
+  getDayState,
+  inline = false,
+  placeholderFrom = "dd-mm-yyyy",
+  placeholderTo = "dd-mm-yyyy",
+}: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
   const [hoverDay, setHoverDay] = useState<string | null>(null);
   const [selecting, setSelecting] = useState<"checkIn" | "checkOut">(checkIn ? "checkOut" : "checkIn");
@@ -71,7 +84,16 @@ export default function DateRangePicker({ checkIn, checkOut, onCheckInChange, on
   };
 
   const handleDayClick = (day: string) => {
-    if (day < todayStr) return;
+    if (day < todayStr || isDateDisabled?.(day)) return;
+
+    // If a full range exists, a new click starts a new selection.
+    if (checkIn && checkOut) {
+      onCheckInChange(day);
+      onCheckOutChange("");
+      setSelecting("checkOut");
+      return;
+    }
+
     if (selecting === "checkIn") {
       onCheckInChange(day);
       if (checkOut && day >= checkOut) onCheckOutChange("");
@@ -83,6 +105,7 @@ export default function DateRangePicker({ checkIn, checkOut, onCheckInChange, on
   };
 
   const handleOpen = () => {
+    if (inline) return;
     setOpen(true);
     setBaseYear(now.getFullYear()); setBaseMonth(now.getMonth() + 1);
     if (!checkIn) setSelecting("checkIn");
@@ -105,13 +128,8 @@ export default function DateRangePicker({ checkIn, checkOut, onCheckInChange, on
   const isStart = (day: string) => day === checkIn;
   const isEnd = (day: string) => day === checkOut;
 
-  return (
-    <div ref={ref} className="relative">
-      <button type="button" onClick={handleOpen} className={`w-full rounded-lg border bg-surface px-3 py-2 text-left text-sm transition focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none ${checkIn || checkOut ? "border-input text-foreground" : "border-input text-muted"}`}>
-        {displayValue()}
-      </button>
-      {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 rounded-xl border border-border bg-surface p-4 shadow-xl">
+  const calendarPanel = (
+    <div className={`${inline ? "mt-2" : "absolute left-0 top-full z-50 mt-2"} rounded-xl border border-border bg-surface p-4 shadow-xl`}>
           <div className="mb-3 flex items-center justify-between">
             <button onClick={goBack} className="rounded p-1 text-muted hover:bg-surface-alt hover:text-foreground" aria-label="Previous month">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
@@ -125,17 +143,48 @@ export default function DateRangePicker({ checkIn, checkOut, onCheckInChange, on
             </button>
           </div>
           <div className="flex gap-6">
-            <MonthGrid year={baseYear} month={baseMonth} todayStr={todayStr} isInRange={isInRange} isStart={isStart} isEnd={isEnd} onDayClick={handleDayClick} onDayHover={setHoverDay} />
-            <MonthGrid year={rightMonth.year} month={rightMonth.month} todayStr={todayStr} isInRange={isInRange} isStart={isStart} isEnd={isEnd} onDayClick={handleDayClick} onDayHover={setHoverDay} />
+            <MonthGrid year={baseYear} month={baseMonth} todayStr={todayStr} isInRange={isInRange} isStart={isStart} isEnd={isEnd} onDayClick={handleDayClick} onDayHover={setHoverDay} isDateDisabled={isDateDisabled} getDayState={getDayState} />
+            <MonthGrid year={rightMonth.year} month={rightMonth.month} todayStr={todayStr} isInRange={isInRange} isStart={isStart} isEnd={isEnd} onDayClick={handleDayClick} onDayHover={setHoverDay} isDateDisabled={isDateDisabled} getDayState={getDayState} />
           </div>
           <p className="mt-3 text-center text-xs text-muted">{selecting === "checkIn" ? "Select check-in date" : "Select check-out date"}</p>
         </div>
+  );
+
+  return (
+    <div ref={ref} className="relative">
+      {!inline && (
+        <button type="button" onClick={handleOpen} className={`w-full rounded-lg border bg-surface px-3 py-2 text-left text-sm transition focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none ${checkIn || checkOut ? "border-input text-foreground" : "border-input text-muted"}`}>
+          {displayValue()}
+        </button>
       )}
+      {(inline || open) && calendarPanel}
     </div>
   );
 }
 
-function MonthGrid({ year, month, todayStr, isInRange, isStart, isEnd, onDayClick, onDayHover }: { year: number; month: number; todayStr: string; isInRange: (day: string) => boolean; isStart: (day: string) => boolean; isEnd: (day: string) => boolean; onDayClick: (day: string) => void; onDayHover: (day: string) => void }) {
+function MonthGrid({
+  year,
+  month,
+  todayStr,
+  isInRange,
+  isStart,
+  isEnd,
+  onDayClick,
+  onDayHover,
+  isDateDisabled,
+  getDayState,
+}: {
+  year: number;
+  month: number;
+  todayStr: string;
+  isInRange: (day: string) => boolean;
+  isStart: (day: string) => boolean;
+  isEnd: (day: string) => boolean;
+  onDayClick: (day: string) => void;
+  onDayHover: (day: string) => void;
+  isDateDisabled?: (day: string) => boolean;
+  getDayState?: (day: string) => "available" | "unavailable" | "default";
+}) {
   const days = daysInMonth(year, month);
   const offset = firstWeekday(year, month);
   return (
@@ -147,14 +196,23 @@ function MonthGrid({ year, month, todayStr, isInRange, isStart, isEnd, onDayClic
         {Array.from({ length: offset }, (_, i) => (<span key={`e${i}`} />))}
         {Array.from({ length: days }, (_, i) => {
           const day = toDateStr(year, month, i + 1);
-          const disabled = day < todayStr;
+          const disabled = day < todayStr || !!isDateDisabled?.(day);
           const inRange = isInRange(day);
           const start = isStart(day);
           const end = isEnd(day);
           const isEndpoint = start || end;
+          const dayState = getDayState?.(day) ?? "default";
+          const baseStateClass = dayState === "unavailable"
+            ? "bg-red-100 text-red-700"
+            : dayState === "available"
+              ? "bg-emerald-100 text-emerald-700"
+              : "text-foreground hover:rounded-full hover:bg-surface-alt";
+          const disabledClass = dayState === "unavailable"
+            ? "cursor-not-allowed bg-red-100 text-red-700"
+            : "cursor-not-allowed text-muted";
           return (
             <button key={day} type="button" disabled={disabled} onClick={() => onDayClick(day)} onMouseEnter={() => onDayHover(day)}
-              className={`flex h-9 w-9 items-center justify-center text-sm transition-colors ${disabled ? "cursor-not-allowed text-muted" : isEndpoint ? "rounded-full bg-primary font-semibold text-primary-fg" : inRange ? "bg-accent text-accent-fg" : "text-foreground hover:rounded-full hover:bg-surface-alt"}`}>
+              className={`flex h-9 w-9 items-center justify-center rounded-sm text-sm transition-colors ${disabled ? disabledClass : isEndpoint ? "rounded-full bg-primary font-semibold text-primary-fg" : inRange ? "bg-accent text-accent-fg" : baseStateClass}`}>
               {i + 1}
             </button>
           );

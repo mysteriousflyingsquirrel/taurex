@@ -174,6 +174,47 @@ export type Apartment = {
   minStay?: Record<string, number>; // keyed by seasonId
 };
 
+export type BookingRequestStatus = "pending" | "accepted" | "declined";
+
+export type BookingRequest = {
+  id: string;
+  apartmentSlug: string;
+  apartmentName: string;
+  checkIn: string; // YYYY-MM-DD
+  checkOut: string; // YYYY-MM-DD
+  nights: number;
+  guestCount: number;
+  guestName: string;
+  guestEmail: string;
+  guestMessage?: string;
+  approxTotal: number;
+  status: BookingRequestStatus;
+  createdAt: string; // ISO timestamp
+  updatedAt: string; // ISO timestamp
+  decidedAt?: string; // ISO timestamp
+  decidedByUid?: string;
+  decisionNote?: string;
+};
+
+export type CreateBookingRequestInput = {
+  hostId: string;
+  apartmentSlug: string;
+  checkIn: string;
+  checkOut: string;
+  guestCount: number;
+  guestName: string;
+  guestEmail: string;
+  guestMessage?: string;
+  approxTotal: number;
+};
+
+export type DecideBookingRequestInput = {
+  hostId: string;
+  requestId: string;
+  decision: "accepted" | "declined";
+  decisionNote?: string;
+};
+
 // Seasons
 
 export type DateString = string; // "YYYY-MM-DD" format

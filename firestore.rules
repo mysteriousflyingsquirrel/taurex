@@ -59,6 +59,12 @@ service cloud.firestore {
         allow read, write: if isApex() || isHostOwner(hostId);
       }
 
+      // ─── Booking requests (host-private reads/writes) ──
+      // Guest creation is handled via Cloud Functions using Admin SDK.
+      match /bookingRequests/{requestId} {
+        allow read, write: if isApex() || isHostOwner(hostId);
+      }
+
       // ─── Catch-all for future subcollections ───────────
       match /{subcollection}/{docId} {
         allow read: if isApex() || isHostOwner(hostId);

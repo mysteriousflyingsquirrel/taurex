@@ -8,6 +8,7 @@ It is the single source of truth for:
 - Top-level collections (`hosts`, `users`)
 - Host resolution logic
 - Security rules
+- Booking request function boundaries
 
 For host-scoped domain data (apartments, seasons, images), see [data-model.md](data-model.md).
 
@@ -165,6 +166,7 @@ Rules are implemented in `firestore.rules` at the repository root.
 | `hosts/{hostId}/apartments/{slug}` | Public (sanitized apartment + availability projection) | Apex OR host owner | Apex OR host owner | Apex OR host owner |
 | `hosts/{hostId}/seasons/{id}` | Public | Apex OR host owner | Apex OR host owner | Apex OR host owner |
 | `hosts/{hostId}/apartmentCalendarsPrivate/{slug}` | Apex OR host owner | Apex OR host owner | Apex OR host owner | Apex OR host owner |
+| `hosts/{hostId}/bookingRequests/{requestId}` | Apex OR host owner | Public via validated function OR host/apex | Apex OR host owner | Apex OR host owner |
 | `hosts/{hostId}/{other}/{docId}` | Apex OR host owner | Apex OR host owner | Apex OR host owner | Apex OR host owner |
 
 ### Key Enforcement
@@ -176,10 +178,42 @@ Rules are implemented in `firestore.rules` at the repository root.
 - Users collection is locked down: only apex can write, users can only read their own profile
 - Catch-all rule for future subcollections defaults to host-owner + apex access
 
+## 6b. Booking Request Functions
+
+Booking request mutation is function-first to keep validation and anti-abuse checks centralized.
+
+### `createBookingRequest`
+
+- Public endpoint (guest, no auth required)
+- Validates:
+  - host/apartment existence
+  - date range coherence and availability overlap
+  - min-stay rules
+  - required guest fields (`name`, `email`)
+- Persists `pending` request under `hosts/{hostId}/bookingRequests/{requestId}`
+
+### `decideBookingRequest`
+
+- Authenticated endpoint (host owner or apex)
+- Accept path:
+  1. sync latest imports
+  2. re-check overlaps/conflicts
+  3. write manual block to apartment calendar
+  4. mark request `accepted`
+- Decline path:
+  - mark request `declined` (no calendar write)
+- Both paths enqueue guest decision email via Trigger Email extension collection.
+
 ### Implemented Infrastructure Notes
 
 - **Storage rules** exist in `storage.rules`.
 - **Cloud Functions** are implemented for calendar sync/export flows (including scheduled and callable sync).
+- **Booking request functions** are implemented for guest create and host decision paths.
+- **Firebase Trigger Email extension** is used for booking decision notifications.
+
+## 6c. Booking Engine Configuration
+
+- Trigger Email extension is configured to watch a mail collection (default `mail`) and send transactional emails from request decision events.
 
 ---
 

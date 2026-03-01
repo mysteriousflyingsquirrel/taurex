@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import Calendar from "./pages/Calendar";
 import Apartments from "./pages/Apartments";
 import ApartmentEdit from "./pages/ApartmentEdit";
+import Bookings from "./pages/Bookings";
 import Seasons from "./pages/Seasons";
 import Settings from "./pages/Settings";
 
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="calendar" element={<Calendar />} />
         <Route path="apartments" element={<Apartments />} />
         <Route path="apartments/:slug" element={<ApartmentEdit />} />
+        <Route path="bookings" element={<Bookings />} />
         <Route path="seasons" element={<Seasons />} />
         <Route path="settings" element={<Settings />} />
       </Route>

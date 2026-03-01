@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import "../../../lib/firebase";
 import {
+  createBookingRequest,
   fetchHostBySlug,
   fetchApartmentBySlug,
   fetchApartments,
@@ -19,11 +20,13 @@ import {
 import HostHeader from "../../../components/HostHeader";
 import ImageCarousel from "../../../components/ImageCarousel";
 import Map from "../../../components/Map";
+import DateRangePicker from "../../../components/DateRangePicker";
 import { t, getLang } from "../../../lib/i18n";
 
 export default function ApartmentPage() {
   const { hostSlug, apartmentSlug } = useParams<{ hostSlug: string; apartmentSlug: string }>();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [host, setHost] = useState<Host | null>(null);
   const [apartment, setApartment] = useState<Apartment | null>(null);
@@ -33,9 +36,21 @@ export default function ApartmentPage() {
   const [notFound, setNotFound] = useState<"host" | "apartment" | null>(null);
 
   const lang = getLang(searchParams.get("lang"), host?.languages ?? ["en"]);
-  const checkIn = searchParams.get("checkIn") ?? "";
-  const checkOut = searchParams.get("checkOut") ?? "";
-  const hasDates = checkIn && checkOut;
+  const [selectedCheckIn, setSelectedCheckIn] = useState(searchParams.get("checkIn") ?? "");
+  const [selectedCheckOut, setSelectedCheckOut] = useState(searchParams.get("checkOut") ?? "");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [guestName, setGuestName] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestMessage, setGuestMessage] = useState("");
+  const [guestCount, setGuestCount] = useState(1);
+  const [submitError, setSubmitError] = useState("");
+  const [submitSuccess, setSubmitSuccess] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    setSelectedCheckIn(searchParams.get("checkIn") ?? "");
+    setSelectedCheckOut(searchParams.get("checkOut") ?? "");
+  }, [searchParams]);
 
   useEffect(() => {
     if (!hostSlug || !apartmentSlug) return;
@@ -73,6 +88,18 @@ export default function ApartmentPage() {
     }
   }, [host, apartment]);
 
+  const unavailableRanges = useMemo(() => {
+    const calendar = apartment?.calendar;
+    if (!calendar) return [];
+    return [
+      ...(calendar.manualBlocks ?? []),
+      ...(calendar.importedBusyRanges ?? []),
+      ...(calendar.conflicts ?? [])
+        .filter((item) => item.status !== "resolved")
+        .map((item) => ({ startDate: item.startDate, endDate: item.endDate })),
+    ];
+  }, [apartment]);
+
   if (notFound === "host") {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 text-center">
@@ -104,9 +131,7 @@ export default function ApartmentPage() {
   const cur = (host.baseCurrency ?? "CHF") as CurrencyCode;
   const description = apartment.descriptions?.[lang] ?? apartment.descriptions?.en ?? "";
   const amenities = apartment.amenities?.[lang] ?? apartment.amenities?.en ?? [];
-  const minStay = apartment.minStayDefault ?? 1;
-  const pricingDate = checkIn || new Date().toISOString().slice(0, 10);
-  const nightsCount = hasDates ? Math.max(0, Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000)) : 0;
+  const pricingDate = selectedCheckIn || new Date().toISOString().slice(0, 10);
 
   const isDateInRange = (date: string, start: string, end: string) =>
     !!date && !!start && !!end && date >= start && date <= end;
@@ -138,6 +163,120 @@ export default function ApartmentPage() {
     return { active: true as const, basePrice, discountedPrice, promotion };
   };
   const promo = getPromotionPrice(apartment, pricingDate);
+
+  function addDays(dateStr: string, days: number) {
+    const value = new Date(`${dateStr}T00:00:00Z`);
+    value.setUTCDate(value.getUTCDate() + days);
+    return value.toISOString().slice(0, 10);
+  }
+
+  function rangesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string) {
+    return !(aEnd < bStart || bEnd < aStart);
+  }
+
+  function updateDateParam(
+    key: "checkIn" | "checkOut",
+    value: string,
+    extraMutator?: (params: URLSearchParams) => void
+  ) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set(key, value);
+    else params.delete(key);
+    extraMutator?.(params);
+    router.replace(`/${hostSlug}/${apartmentSlug}?${params.toString()}`, { scroll: false });
+  }
+
+  function onCheckInChange(date: string) {
+    setSelectedCheckIn(date);
+    updateDateParam("checkIn", date, (params) => {
+      if (selectedCheckOut && date >= selectedCheckOut) {
+        params.delete("checkOut");
+      }
+    });
+    if (selectedCheckOut && date >= selectedCheckOut) {
+      setSelectedCheckOut("");
+    }
+  }
+
+  function onCheckOutChange(date: string) {
+    setSelectedCheckOut(date);
+    updateDateParam("checkOut", date);
+  }
+
+  function isUnavailableDate(day: string) {
+    return unavailableRanges.some((item) =>
+      day >= item.startDate && day <= item.endDate
+    );
+  }
+
+  function getAvailabilityDayState(day: string): "available" | "unavailable" | "default" {
+    if (isUnavailableDate(day)) return "unavailable";
+    return "available";
+  }
+
+  function getEffectiveMinStay(date: string) {
+    if (!apartment) return 1;
+    for (const season of Object.values(seasons)) {
+      const matches = season.dateRanges?.some((r) => isDateInRange(date, r.start, r.end));
+      if (matches) {
+        const seasonMinStay = apartment.minStay?.[season.id];
+        if (typeof seasonMinStay === "number" && seasonMinStay >= 1) return seasonMinStay;
+      }
+    }
+    return apartment.minStayDefault ?? 1;
+  }
+
+  const hasDates = !!selectedCheckIn && !!selectedCheckOut && selectedCheckOut > selectedCheckIn;
+  const nightsCount = hasDates
+    ? Math.max(
+        0,
+        Math.round(
+          (new Date(`${selectedCheckOut}T00:00:00Z`).getTime() -
+            new Date(`${selectedCheckIn}T00:00:00Z`).getTime()) /
+            86400000
+        )
+      )
+    : 0;
+  const effectiveMinStay = selectedCheckIn ? getEffectiveMinStay(selectedCheckIn) : apartment.minStayDefault ?? 1;
+  const stayEnd = hasDates ? addDays(selectedCheckOut, -1) : "";
+  const overlapsUnavailable = hasDates
+    ? unavailableRanges.some((item) =>
+        rangesOverlap(selectedCheckIn, stayEnd, item.startDate, item.endDate)
+      )
+    : false;
+  const meetsMinStay = nightsCount >= effectiveMinStay;
+  const canRequest = hasDates && !overlapsUnavailable && meetsMinStay;
+  const approxTotal = nightsCount > 0 ? nightsCount * promo.discountedPrice : 0;
+
+  async function handleSubmitBookingRequest() {
+    if (!canRequest || !host || !apartment) return;
+    if (!guestName.trim() || !guestEmail.trim()) {
+      setSubmitError(t(lang, "apartment.requestIdentityRequired"));
+      return;
+    }
+    setSubmitting(true);
+    setSubmitError("");
+    try {
+      await createBookingRequest({
+        hostId: host.id,
+        apartmentSlug: apartment.slug,
+        checkIn: selectedCheckIn,
+        checkOut: selectedCheckOut,
+        guestCount,
+        guestName: guestName.trim(),
+        guestEmail: guestEmail.trim(),
+        guestMessage: guestMessage.trim(),
+        approxTotal,
+      });
+      setConfirmOpen(false);
+      setSubmitSuccess(t(lang, "apartment.requestSuccess"));
+      setGuestMessage("");
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : t(lang, "apartment.requestFailed"));
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   const facts: { label: string; value: string | number }[] = [];
   if (apartment.facts) {
@@ -226,20 +365,34 @@ export default function ApartmentPage() {
         <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-5">
           <div className="lg:col-span-3">
             <h2 className="text-lg font-semibold text-foreground">{t(lang, "apartment.availability")}</h2>
-            <div className="mt-3 flex h-48 items-center justify-center rounded-2xl border border-border bg-surface">
-              <p className="text-muted">{t(lang, "apartment.availabilityComingSoon")}</p>
-            </div>
+            <DateRangePicker
+              checkIn={selectedCheckIn}
+              checkOut={selectedCheckOut}
+              onCheckInChange={onCheckInChange}
+              onCheckOutChange={onCheckOutChange}
+              isDateDisabled={isUnavailableDate}
+              getDayState={getAvailabilityDayState}
+              inline
+            />
+            {hasDates && overlapsUnavailable && (
+              <p className="mt-2 text-sm text-destructive">{t(lang, "apartment.unavailableRange")}</p>
+            )}
           </div>
           <div className="lg:col-span-2">
             <h2 className="text-lg font-semibold text-foreground">{t(lang, "apartment.booking")}</h2>
             <div className="mt-3 rounded-2xl border border-border bg-surface p-6">
+              {submitSuccess && (
+                <div className="mb-4 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+                  {submitSuccess}
+                </div>
+              )}
               {hasDates ? (
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-foreground">{t(lang, "apartment.selectedDates")}</p>
                   <div className="flex items-center gap-3 text-sm text-foreground">
-                    <div className="rounded-lg bg-surface-alt px-3 py-2"><span className="text-xs text-muted">{t(lang, "filter.checkIn")}</span><p className="font-medium">{formatDate(checkIn)}</p></div>
+                    <div className="rounded-lg bg-surface-alt px-3 py-2"><span className="text-xs text-muted">{t(lang, "filter.checkIn")}</span><p className="font-medium">{formatDate(selectedCheckIn)}</p></div>
                     <span className="text-muted">→</span>
-                    <div className="rounded-lg bg-surface-alt px-3 py-2"><span className="text-xs text-muted">{t(lang, "filter.checkOut")}</span><p className="font-medium">{formatDate(checkOut)}</p></div>
+                    <div className="rounded-lg bg-surface-alt px-3 py-2"><span className="text-xs text-muted">{t(lang, "filter.checkOut")}</span><p className="font-medium">{formatDate(selectedCheckOut)}</p></div>
                   </div>
                   {nightsCount > 0 && <p className="text-sm text-muted">{t(lang, "apartment.nightsSelected", { nights: nightsCount })}</p>}
                 </div>
@@ -259,11 +412,25 @@ export default function ApartmentPage() {
                   <p className="mt-0.5 text-xs text-accent-fg/80">{t(lang, "apartment.bestPriceDesc")}</p>
                 </div>
               </div>
-              {minStay > 1 && (
-                <div className="mt-4 border-t border-border pt-4"><p className="text-center text-sm text-muted">{t(lang, "apartment.minStay", { nights: minStay })}</p></div>
+              {effectiveMinStay > 1 && (
+                <div className="mt-4 border-t border-border pt-4"><p className="text-center text-sm text-muted">{t(lang, "apartment.minStay", { nights: effectiveMinStay })}</p></div>
+              )}
+              {hasDates && !meetsMinStay && (
+                <p className="mt-3 text-sm text-destructive">
+                  {t(lang, "apartment.minStayError", { nights: effectiveMinStay })}
+                </p>
               )}
               <div className="mt-6 space-y-3">
-                <button disabled className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg opacity-60 cursor-not-allowed">{t(lang, "apartment.directBooking")}</button>
+                <button
+                  disabled={!canRequest || submitting}
+                  onClick={() => {
+                    setSubmitError("");
+                    setConfirmOpen(true);
+                  }}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {t(lang, "apartment.directBooking")}
+                </button>
                 {apartment.bookingLinks?.map((link, i) => (
                   <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-foreground transition hover:border-primary hover:text-primary">
                     {link.label}
@@ -285,6 +452,69 @@ export default function ApartmentPage() {
           </div>
         )}
       </main>
+      {confirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-xl border border-border bg-surface p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-foreground">{t(lang, "apartment.confirmTitle")}</h3>
+            <p className="mt-1 text-sm text-muted">
+              {formatDate(selectedCheckIn)} - {formatDate(selectedCheckOut)} · {nightsCount} {t(lang, "apartment.nights")}
+            </p>
+            <p className="mt-1 text-sm font-medium text-foreground">
+              {t(lang, "apartment.approxTotal", { total: formatMoney(approxTotal, cur) })}
+            </p>
+
+            <div className="mt-4 grid gap-3">
+              <input
+                type="text"
+                placeholder={t(lang, "apartment.guestName")}
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+                className="rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
+              />
+              <input
+                type="email"
+                placeholder={t(lang, "apartment.guestEmail")}
+                value={guestEmail}
+                onChange={(e) => setGuestEmail(e.target.value)}
+                className="rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
+              />
+              <input
+                type="number"
+                min={1}
+                max={apartment.facts?.guests || 20}
+                value={guestCount}
+                onChange={(e) => setGuestCount(Math.max(1, Number(e.target.value || 1)))}
+                className="rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
+              />
+              <textarea
+                placeholder={t(lang, "apartment.guestMessage")}
+                value={guestMessage}
+                onChange={(e) => setGuestMessage(e.target.value)}
+                rows={3}
+                className="rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
+              />
+            </div>
+
+            {submitError && <p className="mt-3 text-sm text-destructive">{submitError}</p>}
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmOpen(false)}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-alt"
+              >
+                {t(lang, "apartment.cancel")}
+              </button>
+              <button
+                onClick={handleSubmitBookingRequest}
+                disabled={submitting}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-fg disabled:opacity-60"
+              >
+                {submitting ? t(lang, "apartment.submitting") : t(lang, "apartment.submitRequest")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

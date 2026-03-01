@@ -38,6 +38,7 @@ export default function HostPage() {
   const guests = parseInt(searchParams.get("guests") ?? "1", 10) || 1;
   const onlyAvailable = searchParams.get("onlyAvailable") === "1";
   const lang = getLang(searchParams.get("lang"), host?.languages ?? ["en"]);
+  const hasDateRange = !!checkIn && !!checkOut && checkOut > checkIn;
 
   useEffect(() => {
     if (!hostSlug) return;
@@ -75,8 +76,33 @@ export default function HostPage() {
   const filteredApartments = useMemo(() => {
     let result = apartments;
     if (guests > 1) result = result.filter((a) => a.facts && a.facts.guests >= guests);
+    if (onlyAvailable && hasDateRange) {
+      result = result.filter((apt) => {
+        const stayEnd = addDays(checkOut, -1);
+        if (stayEnd < checkIn) return false;
+        const calendar = apt.calendar;
+        const unavailableRanges = [
+          ...(calendar?.manualBlocks ?? []),
+          ...(calendar?.importedBusyRanges ?? []),
+        ];
+        const hasBlockedDates = unavailableRanges.some((item) =>
+          rangesOverlap(checkIn, stayEnd, item.startDate, item.endDate)
+        );
+        if (hasBlockedDates) return false;
+        const hasConflicts = (calendar?.conflicts ?? []).some(
+          (item) =>
+            item.status !== "resolved" &&
+            rangesOverlap(checkIn, stayEnd, item.startDate, item.endDate)
+        );
+        if (hasConflicts) return false;
+
+        const nights = getNights(checkIn, checkOut);
+        const effectiveMinStay = getEffectiveMinStayForDate(apt, checkIn, seasons);
+        return nights >= effectiveMinStay;
+      });
+    }
     return result;
-  }, [apartments, guests]);
+  }, [apartments, guests, onlyAvailable, hasDateRange, checkIn, checkOut, seasons]);
 
   const updateParam = (key: string, value: string | null) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -127,6 +153,44 @@ export default function HostPage() {
 
   const isDateInRange = (date: string, start: string, end: string) =>
     !!date && !!start && !!end && date >= start && date <= end;
+
+  function rangesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string) {
+    return !(aEnd < bStart || bEnd < aStart);
+  }
+
+  function addDays(dateStr: string, days: number) {
+    const value = new Date(`${dateStr}T00:00:00Z`);
+    value.setUTCDate(value.getUTCDate() + days);
+    return value.toISOString().slice(0, 10);
+  }
+
+  function getNights(start: string, end: string) {
+    return (
+      Math.max(
+        0,
+        Math.round(
+          (new Date(`${end}T00:00:00Z`).getTime() -
+            new Date(`${start}T00:00:00Z`).getTime()) /
+            86400000
+        )
+      )
+    );
+  }
+
+  function getEffectiveMinStayForDate(
+    apt: Apartment,
+    date: string,
+    seasonMap: Record<string, Season>
+  ) {
+    for (const season of Object.values(seasonMap)) {
+      const matches = season.dateRanges?.some((r) => isDateInRange(date, r.start, r.end));
+      if (matches) {
+        const seasonMinStay = apt.minStay?.[season.id];
+        if (typeof seasonMinStay === "number" && seasonMinStay >= 1) return seasonMinStay;
+      }
+    }
+    return apt.minStayDefault ?? 1;
+  }
 
   const getEffectiveNightlyPrice = (apt: Apartment, date: string): number => {
     for (const season of Object.values(seasons)) {

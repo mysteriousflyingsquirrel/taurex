@@ -47,7 +47,7 @@ If resolution fails at any step, the user is signed out and shown an error.
 └──────────────────────────────────────────────────┘
 ```
 
-- **Sidebar**: Fixed width (`w-64`). Nav items: Dashboard → Calendar → Apartments → Seasons → Settings. Active item highlighted. Active detection uses `pathname.startsWith(href)` for nested route support.
+- **Sidebar**: Fixed width (`w-64`). Nav items: Dashboard → Calendar → Apartments → Bookings → Seasons → Settings. Active item highlighted. Active detection uses `pathname.startsWith(href)` for nested route support.
 - **Main area**: Scrollable, padded.
 - **Bottom of sidebar**: User email + Logout button.
 
@@ -62,6 +62,7 @@ If resolution fails at any step, the user is signed out and shown an error.
 /apartments              → Apartment list (table)
 /apartments/new          → Create new apartment
 /apartments/{slug}       → Edit existing apartment (autosave)
+/bookings                → Booking requests (pending + processed, accept/decline)
 /seasons                 → Season manager + calendar painter (autosave)
 /settings                → Host settings: languages (autosave)
 ```
@@ -361,6 +362,53 @@ Card below calendar showing per-season day counts for the displayed year + "Defa
 
 ---
 
+## 7b. Bookings Page (`/bookings`)
+
+**Purpose**: Review incoming booking requests and decide accept/decline with conflict-safe handling.
+
+### 7b.1 Layout
+
+- Header title: `Bookings`
+- Two list segments:
+  - **Pending** requests (`status = pending`)
+  - **Processed** requests (`status = accepted | declined`)
+- Desktop table + mobile cards pattern aligned with Apartments page conventions.
+
+### 7b.2 Request Columns
+
+| Column | Content |
+|---|---|
+| Apartment | Apartment name + slug |
+| Dates | Check-in and check-out (`dd-mm-yyyy`) |
+| Nights | Derived stay length |
+| Guest | Name + email |
+| Guests | Requested guest count |
+| Price | Approximate total shown to host for review |
+| Status | Pending / Accepted / Declined |
+| Actions | Accept / Decline (pending only) |
+
+### 7b.3 Decision Flow
+
+**Accept**:
+1. Trigger backend decision endpoint.
+2. Backend refreshes iCal imports and re-checks overlaps/conflicts.
+3. If valid, backend writes a calendar manual block tied to booking request ID.
+4. Request status becomes `accepted`.
+
+**Decline**:
+1. Trigger backend decision endpoint.
+2. Request status becomes `declined`.
+3. No manual block is added.
+
+For both outcomes, backend queues guest decision email through Firebase Trigger Email extension.
+
+### 7b.4 Errors
+
+- If accept fails due to conflict/race, host sees explicit error and request remains pending.
+- Page supports retry without requiring hard refresh.
+
+---
+
 ## 8. Settings Page (`/settings`)
 
 **Purpose**: Host configuration — base currency and language management.
@@ -423,6 +471,10 @@ Calendar Page
   └── setApartmentManualBlock(hostId, apartmentSlug, block)
   └── removeApartmentManualBlock(hostId, apartmentSlug, blockId)
 
+Bookings Page
+  └── fetchBookingRequests(hostId, status?)
+  └── decideBookingRequest(hostId, requestId, decision)
+
 Apartments List Page
   └── fetchApartments(hostId)
   └── deleteApartment(hostId, slug)
@@ -468,7 +520,7 @@ Settings Page
 - [ ] Session persists across browser restart (Firebase default persistence).
 
 ### Layout
-- [ ] Sidebar has fixed width (`w-64`) with nav items: Dashboard, Calendar, Apartments, Seasons, Settings.
+- [ ] Sidebar has fixed width (`w-64`) with nav items: Dashboard, Calendar, Apartments, Bookings, Seasons, Settings.
 - [ ] Active nav item is highlighted; active state uses `pathname.startsWith(href)` for nested routes.
 - [ ] Bottom of sidebar shows user email and Logout button.
 - [ ] Main content area is scrollable and padded.
@@ -532,6 +584,15 @@ Settings Page
 - [ ] Painting: IDLE — click assigned day removes; click other starts range. RANGE_IN_PROGRESS — click completes range (add to season, remove overlaps); Escape cancels.
 - [ ] Seasons autosave with 2s debounce after painting or editing; delete is immediate.
 - [ ] Legend panel shows per-season day counts and "Default" days remaining for the displayed year.
+
+### Bookings
+- [ ] `/bookings` route is available to authenticated hosts.
+- [ ] Pending and processed requests are shown in responsive list/table views.
+- [ ] Each request shows apartment, stay dates, nights, guest identity, guest count, status, and actions.
+- [ ] Accept action triggers backend sync + conflict re-check; on success request moves to accepted.
+- [ ] Decline action updates request to declined without calendar write.
+- [ ] Conflict/race failures on accept show explicit error and do not change request state.
+- [ ] Guest decision email queueing is triggered for both accepted and declined outcomes.
 
 ### Settings
 - [ ] Host info displayed read-only: Host ID, Name, Slug.

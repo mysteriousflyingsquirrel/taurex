@@ -36,6 +36,10 @@ export type {
   ApartmentCalendarConflict,
   ApartmentCalendar,
   ApartmentCalendarPrivate,
+  BookingRequestStatus,
+  BookingRequest,
+  CreateBookingRequestInput,
+  DecideBookingRequestInput,
   Season,
   SeasonDateRange,
   DateString,
@@ -74,6 +78,13 @@ export {
   removeApartmentManualBlock,
   refreshApartmentCalendarImports,
 } from "./services/apartmentService";
+
+export {
+  fetchBookingRequests,
+  fetchBookingRequestById,
+  createBookingRequest,
+  decideBookingRequest,
+} from "./services/bookingRequestService";
 
 export {
   fetchSeasons,

@@ -93,6 +93,25 @@ Firestore Root
 │       │       ├── conflictPolicy: string       # "strict-no-overwrite"
 │       │       └── updatedAt: string
 │       │
+│       ├── bookingRequests/                     # Booking engine requests (guest create, host decision)
+│       │   └── {requestId}/
+│       │       ├── apartmentSlug: string
+│       │       ├── apartmentName: string
+│       │       ├── checkIn: string              # "YYYY-MM-DD"
+│       │       ├── checkOut: string             # "YYYY-MM-DD"
+│       │       ├── nights: number
+│       │       ├── guestCount: number
+│       │       ├── guestName: string
+│       │       ├── guestEmail: string
+│       │       ├── guestMessage: string         # optional
+│       │       ├── approxTotal: number
+│       │       ├── status: string               # "pending" | "accepted" | "declined"
+│       │       ├── createdAt: string            # ISO timestamp
+│       │       ├── updatedAt: string            # ISO timestamp
+│       │       ├── decidedAt: string            # optional ISO timestamp
+│       │       ├── decidedByUid: string         # optional
+│       │       └── decisionNote: string         # optional host note
+│       │
 │       └── seasons/                             # Subcollection
 │           └── {seasonId}/
 │               ├── year: number
@@ -157,6 +176,8 @@ Firebase Storage Root
 | **Images stored as URLs** | `images[].src` and `images[].srcBig` contain full Firebase Storage download URLs. |
 | **Apartment image limit** | Maximum 15 images per apartment (host app enforces this in upload UI). |
 | **Calendar public/private split** | Public apartment docs store only availability projection. Sensitive iCal internals (`exportToken`, import URLs/status/errors/colors) live in `apartmentCalendarsPrivate`. |
+| **Booking request lifecycle** | Requests are stored in `hosts/{hostId}/bookingRequests/{requestId}` with status flow `pending -> accepted/declined`. |
+| **Booking accept writeback** | Accepted requests are written into apartment `calendar.manualBlocks` (with request reference in note) so the export iCal immediately reflects accepted stays. |
 | **Conflict policy** | Manual blocks and import merges use strict no-overwrite conflict handling. Conflicts are surfaced and require explicit host action. |
 | **Promotion cardinality** | At most one promotion object per apartment (`promotion` field), no promotion array. |
 | **Promotion validation** | `discountPercent` must be 1..99; `startDate` and `endDate` are required when promotion exists; `startDate <= endDate`. |
@@ -176,6 +197,7 @@ Firestore automatically creates single-field indexes for every field. The querie
 | `fetchHosts()` | `hosts` ordered by `slug` | Single-field (auto) |
 | `fetchSeasons(hostId, year)` | `hosts/{hostId}/seasons` where `year == X` | Single-field (auto) |
 | `fetchApartments(hostId)` | `hosts/{hostId}/apartments` (all docs) | None |
+| `fetchBookingRequests(hostId, status?)` | `hosts/{hostId}/bookingRequests` filtered by `status` and ordered by `createdAt desc` | Single-field (auto) |
 | `fetchAllUsers()` | `users` (all docs) | None |
 
 No composite indexes are required for the current query patterns. All queries either fetch full collections, filter on a single field, or order on a single field — all covered by automatic indexes.
@@ -304,6 +326,28 @@ type ApartmentCalendarPrivate = {
   updatedAt: string
 }
 
+type BookingRequestStatus = "pending" | "accepted" | "declined"
+
+type BookingRequest = {
+  id: string
+  apartmentSlug: string
+  apartmentName: string
+  checkIn: string
+  checkOut: string
+  nights: number
+  guestCount: number
+  guestName: string
+  guestEmail: string
+  guestMessage?: string
+  approxTotal: number
+  status: BookingRequestStatus
+  createdAt: string
+  updatedAt: string
+  decidedAt?: string
+  decidedByUid?: string
+  decisionNote?: string
+}
+
 // Seasons
 
 type Season = {
@@ -340,6 +384,14 @@ All service functions live in `@taurex/firebase` and are shared across applicati
 | `createApartment` | `(hostId, apartment) → Promise<void>` | Create new apartment |
 | `updateApartment` | `(hostId, slug, data) → Promise<void>` | Partial update |
 | `deleteApartment` | `(hostId, slug) → Promise<void>` | Delete apartment |
+
+### Booking Request Service
+
+| Function | Signature | Description |
+|---|---|---|
+| `fetchBookingRequests` | `(hostId, status?) → Promise<BookingRequest[]>` | Host list view for booking requests |
+| `createBookingRequest` | `(payload) → Promise<{ requestId: string }>` | Public request creation with strict payload/availability validation |
+| `decideBookingRequest` | `(hostId, requestId, decision, note?) → Promise<BookingRequest>` | Host/apex decision + conflict-safe acceptance |
 
 ### Season Service
 
