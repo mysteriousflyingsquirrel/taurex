@@ -60,7 +60,12 @@ Firestore Root
 │       │       │   └── [i]: map
 │       │       │       ├── label: string
 │       │       │       └── url: string
-│       │       ├── icalUrls: array<string>
+│       │       ├── calendar: map                # public-safe availability projection
+│       │       │   ├── manualBlocks: array
+│       │       │   ├── importedBusyRanges: array
+│       │       │   ├── conflicts: array
+│       │       │   ├── lastAutoSyncAt: string
+│       │       │   └── lastInternalUpdateAt: string
 │       │       ├── priceDefault: number
 │       │       ├── prices: map                  # (optional) Per-season price overrides
 │       │       │   └── {seasonId}: number
@@ -72,6 +77,21 @@ Firestore Root
 │       │       ├── minStayDefault: number
 │       │       └── minStay: map                 # (optional) Per-season overrides
 │       │           └── {seasonId}: number
+│       │
+│       ├── apartmentCalendarsPrivate/           # Host-only private calendar internals
+│       │   └── {apartmentSlug}/
+│       │       ├── exportToken: string
+│       │       ├── imports: array
+│       │       │   └── [i]: map
+│       │       │       ├── id: string
+│       │       │       ├── name: string
+│       │       │       ├── url: string
+│       │       │       ├── isActive: boolean
+│       │       │       ├── lastStatus: "pending" | "ok" | "error"
+│       │       │       ├── lastSyncAt: string
+│       │       │       └── lastError: string
+│       │       ├── conflictPolicy: string       # "strict-no-overwrite"
+│       │       └── updatedAt: string
 │       │
 │       └── seasons/                             # Subcollection
 │           └── {seasonId}/
@@ -136,6 +156,8 @@ Firebase Storage Root
 | **Autosave** | All edit pages use debounced autosave (1.5–2s). New apartment creation still requires manual "Create" action. |
 | **Images stored as URLs** | `images[].src` and `images[].srcBig` contain full Firebase Storage download URLs. |
 | **Apartment image limit** | Maximum 15 images per apartment (host app enforces this in upload UI). |
+| **Calendar public/private split** | Public apartment docs store only availability projection. Sensitive iCal internals (`exportToken`, import URLs/status/errors/colors) live in `apartmentCalendarsPrivate`. |
+| **Conflict policy** | Manual blocks and import merges use strict no-overwrite conflict handling. Conflicts are surfaced and require explicit host action. |
 | **Promotion cardinality** | At most one promotion object per apartment (`promotion` field), no promotion array. |
 | **Promotion validation** | `discountPercent` must be 1..99; `startDate` and `endDate` are required when promotion exists; `startDate <= endDate`. |
 | **Branding images** | `logoUrl` and `bannerUrl` on the host document contain full Firebase Storage download URLs. Uploaded via `branding/{hostId}/` storage path. Logo max 512×512px / 500 KB. Banner max 1920×600px / 2 MB. |
@@ -214,6 +236,34 @@ type UserProfile = {
 
 // Apartments
 
+type ApartmentCalendarConflict = {
+  id: string
+  startDate: string
+  endDate: string
+  reason: string
+  sourceIds: string[]
+  status: "open" | "resolved"
+}
+
+type ApartmentCalendar = {
+  manualBlocks: Array<{
+    id: string
+    startDate: string
+    endDate: string
+    note?: string
+  }>
+  importedBusyRanges: Array<{
+    source: "import"
+    sourceId: string
+    startDate: string
+    endDate: string
+    note?: string
+  }>
+  conflicts: ApartmentCalendarConflict[]
+  lastAutoSyncAt?: string
+  lastInternalUpdateAt?: string
+}
+
 type Apartment = {
   id: string
   slug: string
@@ -224,7 +274,8 @@ type Apartment = {
   amenities: Record<string, string[]>
   location: ApartmentLocation
   bookingLinks: BookingLink[]
-  icalUrls: string[]
+  calendar?: ApartmentCalendar
+  icalUrls?: string[] // legacy (migration target)
   priceDefault: number
   prices?: Record<string, number>
   promotion?: {
@@ -235,6 +286,22 @@ type Apartment = {
   }
   minStayDefault: number
   minStay?: Record<string, number>
+}
+
+type ApartmentCalendarPrivate = {
+  exportToken: string
+  imports: Array<{
+    id: string
+    name: string
+    url: string
+    color: string // Hex, e.g. "#3B82F6"
+    isActive: boolean
+    lastStatus?: "pending" | "ok" | "error"
+    lastSyncAt?: string
+    lastError?: string
+  }>
+  conflictPolicy: "strict-no-overwrite"
+  updatedAt: string
 }
 
 // Seasons

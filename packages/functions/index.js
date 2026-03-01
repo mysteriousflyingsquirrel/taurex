@@ -1,39 +1,45 @@
 const admin = require("firebase-admin");
-const functions = require("firebase-functions");
+const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { logger } = require("firebase-functions");
 const {
   parseIcsBusyRanges,
   dedupeBusyRanges,
+  detectConflicts,
   buildIcsForApartment,
 } = require("./ical");
 
 admin.initializeApp();
 const db = admin.firestore();
 
-async function assertHostOwner(data, context) {
-  if (!context.auth?.uid) {
-    throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
+async function assertHostOwner(data, auth) {
+  if (!auth?.uid) {
+    throw new HttpsError("unauthenticated", "Authentication required.");
   }
   const hostId = String(data.hostId || "");
   if (!hostId) {
-    throw new functions.https.HttpsError("invalid-argument", "hostId is required.");
+    throw new HttpsError("invalid-argument", "hostId is required.");
   }
 
-  const userSnap = await db.collection("users").doc(context.auth.uid).get();
+  const userSnap = await db.collection("users").doc(auth.uid).get();
   const profile = userSnap.data();
-  const isAdmin = context.auth.token?.admin === true;
+  const isAdmin = auth.token?.admin === true;
   if (!isAdmin && profile?.hostId !== hostId) {
-    throw new functions.https.HttpsError("permission-denied", "Not allowed for this host.");
+    throw new HttpsError("permission-denied", "Not allowed for this host.");
   }
   return hostId;
 }
 
 async function syncApartmentCalendar(hostId, apartmentSlug) {
   const aptRef = db.collection("hosts").doc(hostId).collection("apartments").doc(apartmentSlug);
+  const privateRef = db.collection("hosts").doc(hostId).collection("apartmentCalendarsPrivate").doc(apartmentSlug);
   const snap = await aptRef.get();
   if (!snap.exists) throw new Error("Apartment not found");
   const apartment = snap.data();
   const calendar = apartment.calendar || {};
-  const imports = Array.isArray(calendar.imports) ? calendar.imports : [];
+  const privateSnap = await privateRef.get();
+  const privateCalendar = privateSnap.exists ? privateSnap.data() : {};
+  const imports = Array.isArray(privateCalendar.imports) ? privateCalendar.imports : [];
 
   const fetched = [];
   for (const source of imports) {
@@ -55,48 +61,56 @@ async function syncApartmentCalendar(hostId, apartmentSlug) {
   }
 
   const importedBusyRanges = dedupeBusyRanges(fetched);
+  const conflicts = detectConflicts(calendar.manualBlocks || [], importedBusyRanges);
   const now = new Date().toISOString();
+  await privateRef.set(
+    {
+      exportToken: privateCalendar.exportToken || (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)),
+      imports,
+      conflictPolicy: "strict-no-overwrite",
+      updatedAt: now,
+    },
+    { merge: true }
+  );
   await aptRef.update({
-    "calendar.imports": imports,
     "calendar.importedBusyRanges": importedBusyRanges,
+    "calendar.conflicts": conflicts,
     "calendar.lastAutoSyncAt": now,
     "calendar.lastInternalUpdateAt": now,
   });
 
-  return { importedBusyRanges, syncedAt: now };
+  return { importedBusyRanges, conflicts, syncedAt: now };
 }
 
-exports.syncApartmentCalendars = functions.pubsub
-  .schedule("every 10 minutes")
-  .onRun(async () => {
-    const hostSnaps = await db.collection("hosts").get();
-    for (const host of hostSnaps.docs) {
-      const apartments = await host.ref.collection("apartments").get();
-      for (const apt of apartments.docs) {
-        try {
-          await syncApartmentCalendar(host.id, apt.id);
-        } catch (err) {
-          functions.logger.error("calendar sync failed", {
-            hostId: host.id,
-            apartmentSlug: apt.id,
-            error: err instanceof Error ? err.message : String(err),
-          });
-        }
+exports.syncApartmentCalendars = onSchedule("every 10 minutes", async () => {
+  const hostSnaps = await db.collection("hosts").get();
+  for (const host of hostSnaps.docs) {
+    const apartments = await host.ref.collection("apartments").get();
+    for (const apt of apartments.docs) {
+      try {
+        await syncApartmentCalendar(host.id, apt.id);
+      } catch (err) {
+        logger.error("calendar sync failed", {
+          hostId: host.id,
+          apartmentSlug: apt.id,
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }
-    return null;
-  });
+  }
+});
 
-exports.refreshApartmentCalendarImport = functions.https.onCall(async (data, context) => {
-  const hostId = await assertHostOwner(data, context);
-  const apartmentSlug = String(data.apartmentSlug || "");
+exports.refreshApartmentCalendarImport = onCall(async (request) => {
+  const data = request.data || {};
+  const hostId = await assertHostOwner(data, request.auth);
+  const apartmentSlug = String(data.apartmentSlug || data.slug || "");
   if (!apartmentSlug) {
-    throw new functions.https.HttpsError("invalid-argument", "apartmentSlug is required.");
+    throw new HttpsError("invalid-argument", "apartmentSlug is required.");
   }
   return syncApartmentCalendar(hostId, apartmentSlug);
 });
 
-exports.exportApartmentIcs = functions.https.onRequest(async (req, res) => {
+exports.exportApartmentIcs = onRequest(async (req, res) => {
   const hostId = String(req.query.hostId || "");
   const apartmentSlug = String(req.query.apartmentSlug || "");
   const token = String(req.query.token || "");
@@ -111,7 +125,13 @@ exports.exportApartmentIcs = functions.https.onRequest(async (req, res) => {
     return;
   }
   const apartment = { id: snap.id, ...snap.data() };
-  const exportToken = apartment.calendar?.exportToken;
+  const privateSnap = await db
+    .collection("hosts")
+    .doc(hostId)
+    .collection("apartmentCalendarsPrivate")
+    .doc(apartmentSlug)
+    .get();
+  const exportToken = privateSnap.data()?.exportToken;
   if (!exportToken || exportToken !== token) {
     res.status(403).send("Invalid export token.");
     return;

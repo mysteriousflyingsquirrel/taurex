@@ -36,11 +36,11 @@ describe("formatMoney", () => {
 });
 
 describe("formatDate", () => {
-  it("formats YYYY-MM-DD to dd.mm.yyyy", () => {
-    expect(formatDate("2026-02-20")).toBe("20.02.2026");
+  it("formats YYYY-MM-DD to dd-mm-yyyy", () => {
+    expect(formatDate("2026-02-20")).toBe("20-02-2026");
   });
 
   it("formats single-digit day/month correctly", () => {
-    expect(formatDate("2026-01-05")).toBe("05.01.2026");
+    expect(formatDate("2026-01-05")).toBe("05-01-2026");
   });
 });

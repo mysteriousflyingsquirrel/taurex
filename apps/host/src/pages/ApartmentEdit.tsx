@@ -6,10 +6,12 @@ import {
   updateApartment,
   fetchSeasons,
   buildApartmentCalendarExportUrl,
+  fetchApartmentCalendarPrivate,
   rotateApartmentCalendarExportToken,
   addApartmentCalendarImport,
   removeApartmentCalendarImport,
   setApartmentCalendarImportActive,
+  setApartmentCalendarImportColor,
   refreshApartmentCalendarImports,
   AVAILABLE_LANGUAGES,
   currencySymbol,
@@ -18,6 +20,7 @@ import {
   type Apartment,
   type ApartmentPromotion,
   type ApartmentCalendar,
+  type ApartmentCalendarPrivate,
   type Season,
   type LanguageCode,
 } from "@taurex/firebase";
@@ -42,6 +45,7 @@ function slugify(text: string): string {
 
 const langLabel = (code: string) =>
   AVAILABLE_LANGUAGES.find((l) => l.code === code)?.label ?? code.toUpperCase();
+const DEFAULT_IMPORT_COLOR = "#3B82F6";
 
 function emptyForm(languages: LanguageCode[]): Omit<Apartment, "id"> {
   const descs: Record<string, string> = {};
@@ -112,16 +116,16 @@ export default function ApartmentEdit() {
   const [newLinkUrl, setNewLinkUrl] = useState("");
   const [newCalendarImportName, setNewCalendarImportName] = useState("");
   const [newCalendarImportUrl, setNewCalendarImportUrl] = useState("");
+  const [newCalendarImportColor, setNewCalendarImportColor] = useState(DEFAULT_IMPORT_COLOR);
   const [refreshingCalendar, setRefreshingCalendar] = useState(false);
   const [rotatingToken, setRotatingToken] = useState(false);
+  const [calendarPrivate, setCalendarPrivate] = useState<ApartmentCalendarPrivate | null>(null);
 
   const createCalendarDraft = useCallback((): ApartmentCalendar => {
-    const token = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
     return {
-      exportToken: token,
-      imports: [],
       manualBlocks: [],
       importedBusyRanges: [],
+      conflicts: [],
       lastInternalUpdateAt: new Date().toISOString(),
     };
   }, []);
@@ -153,6 +157,9 @@ export default function ApartmentEdit() {
         }
         setLoading(false);
       });
+      fetchApartmentCalendarPrivate(hostId, slug)
+        .then((data) => setCalendarPrivate(data))
+        .catch(() => setCalendarPrivate(null));
     }
   }, [hostId, slug, isNew, languages, createCalendarDraft]);
 
@@ -278,36 +285,22 @@ export default function ApartmentEdit() {
     });
   };
 
-  const updateCalendar = useCallback(
-    (calendar: ApartmentCalendar) => {
-      update("calendar", {
-        ...calendar,
-        lastInternalUpdateAt: new Date().toISOString(),
-      });
-    },
-    [update]
-  );
-
-  const handleAddCalendarImport = () => {
+  const handleAddCalendarImport = async () => {
+    if (!hostId || !slug || isNew) return;
     const name = newCalendarImportName.trim();
     const url = newCalendarImportUrl.trim();
     if (!name || !url) return;
-    const draft = form.calendar ?? createCalendarDraft();
-    updateCalendar({
-      ...draft,
-      imports: [
-        ...draft.imports,
-        {
-          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-          name,
-          url,
-          isActive: true,
-          lastStatus: "pending",
-        },
-      ],
-    });
-    setNewCalendarImportName("");
-    setNewCalendarImportUrl("");
+    try {
+      await addApartmentCalendarImport(hostId, slug, { name, url, color: newCalendarImportColor });
+      const privateData = await fetchApartmentCalendarPrivate(hostId, slug);
+      setCalendarPrivate(privateData);
+      setNewCalendarImportName("");
+      setNewCalendarImportUrl("");
+      setNewCalendarImportColor(DEFAULT_IMPORT_COLOR);
+      toast.success("Calendar import added.");
+    } catch {
+      toast.error("Adding import failed.");
+    }
   };
 
   const handleRefreshCalendarImports = async () => {
@@ -316,11 +309,13 @@ export default function ApartmentEdit() {
     try {
       await refreshApartmentCalendarImports(hostId, slug);
       const apt = await fetchApartmentBySlug(hostId, slug);
+      const privateData = await fetchApartmentCalendarPrivate(hostId, slug);
       if (apt) {
         const { id: _, ...rest } = apt;
         setForm(rest);
         setSavedForm(rest);
       }
+      setCalendarPrivate(privateData);
       toast.success("Imports refreshed.");
     } catch {
       toast.error("Refresh failed.");
@@ -334,10 +329,15 @@ export default function ApartmentEdit() {
     setRotatingToken(true);
     try {
       const token = await rotateApartmentCalendarExportToken(hostId, slug);
-      const draft = form.calendar ?? createCalendarDraft();
-      updateCalendar({
-        ...draft,
+      const current = calendarPrivate ?? {
         exportToken: token,
+        imports: [],
+        conflictPolicy: "strict-no-overwrite" as const,
+      };
+      setCalendarPrivate({
+        ...current,
+        exportToken: token,
+        updatedAt: new Date().toISOString(),
       });
       toast.success("Export token rotated.");
     } catch {
@@ -726,69 +726,117 @@ export default function ApartmentEdit() {
           open={openSections.calendar}
           onToggle={() => toggleSection("calendar")}
         >
-          {form.icalUrls.length === 0 ? (
-            <p className="text-sm text-muted">No imports yet.</p>
+          {!ENABLE_APARTMENT_CALENDAR_INTEGRATION ? (
+            <p className="text-sm text-muted">Calendar integration is disabled by feature flag.</p>
+          ) : isNew ? (
+            <p className="text-sm text-muted">Create apartment first to manage iCal integrations.</p>
           ) : (
-            <div className="space-y-2">
-              {form.icalUrls.map((url, i) => (
-                <div key={i} className="flex items-center gap-2">
+            <>
+              <div className="rounded-lg border border-border bg-surface-alt p-3">
+                <p className="text-xs text-muted">Export iCal URL (share with channels)</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    readOnly
+                    value={
+                      hostId && slug && calendarPrivate?.exportToken
+                        ? buildApartmentCalendarExportUrl(hostId, slug, calendarPrivate.exportToken)
+                        : ""
+                    }
+                    className="flex-1 rounded-lg border border-input bg-surface px-3 py-1.5 text-sm text-foreground"
+                  />
+                  <Button variant="secondary" size="sm" onClick={handleRotateExportToken} loading={rotatingToken}>
+                    Rotate token
+                  </Button>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <div className="flex items-center gap-2">
                   <input
                     type="text"
-                    value={url}
-                    onChange={(e) => {
-                      const next = [...form.icalUrls];
-                      next[i] = e.target.value;
-                      update("icalUrls", next);
-                    }}
+                    value={newCalendarImportName}
+                    onChange={(e) => setNewCalendarImportName(e.target.value)}
+                    placeholder="Source name (e.g. Airbnb)"
+                    className="w-48 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    value={newCalendarImportUrl}
+                    onChange={(e) => setNewCalendarImportUrl(e.target.value)}
                     placeholder="https://..."
                     className="flex-1 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
                   />
-                  <div className="ml-auto">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() =>
-                        update(
-                          "icalUrls",
-                          form.icalUrls.filter((_, j) => j !== i)
-                        )
-                      }
-                    >
-                      Delete
-                    </Button>
-                  </div>
+                  <label className="inline-flex items-center gap-2 rounded-lg border border-input px-2 py-1 text-xs text-muted">
+                    <span>Color</span>
+                    <input
+                      type="color"
+                      value={newCalendarImportColor}
+                      onChange={(e) => setNewCalendarImportColor(e.target.value)}
+                      className="h-7 w-7 cursor-pointer rounded border border-input bg-surface p-0"
+                      aria-label="Import source color"
+                    />
+                  </label>
+                  <Button variant="secondary" size="sm" onClick={() => void handleAddCalendarImport()}>
+                    + Add import
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => void handleRefreshCalendarImports()} loading={refreshingCalendar}>
+                    Refresh now
+                  </Button>
                 </div>
-              ))}
-            </div>
+
+                {(calendarPrivate?.imports?.length ?? 0) === 0 ? (
+                  <p className="mt-3 text-sm text-muted">No imports yet.</p>
+                ) : (
+                  <div className="mt-3 space-y-2">
+                    {calendarPrivate?.imports.map((item) => (
+                      <div key={item.id} className="flex items-center gap-2 rounded-lg border border-border p-2">
+                        <input
+                          type="color"
+                          value={item.color || DEFAULT_IMPORT_COLOR}
+                          onChange={async (e) => {
+                            if (!hostId || !slug) return;
+                            await setApartmentCalendarImportColor(hostId, slug, item.id, e.target.value);
+                            setCalendarPrivate(await fetchApartmentCalendarPrivate(hostId, slug));
+                          }}
+                          className="h-8 w-8 cursor-pointer rounded border border-input bg-surface p-0"
+                          aria-label={`${item.name} color`}
+                        />
+                        <input
+                          readOnly
+                          value={`${item.name} · ${item.url}`}
+                          className="flex-1 rounded-lg border border-input bg-surface px-3 py-1.5 text-sm"
+                        />
+                        <label className="inline-flex items-center gap-1 text-xs text-muted">
+                          <input
+                            type="checkbox"
+                            checked={item.isActive}
+                            onChange={async (e) => {
+                              if (!hostId || !slug) return;
+                              await setApartmentCalendarImportActive(hostId, slug, item.id, e.target.checked);
+                              setCalendarPrivate(await fetchApartmentCalendarPrivate(hostId, slug));
+                            }}
+                          />
+                          Active
+                        </label>
+                        <span className="text-xs text-muted">{item.lastStatus || "pending"}</span>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={async () => {
+                            if (!hostId || !slug) return;
+                            await removeApartmentCalendarImport(hostId, slug, item.id);
+                            setCalendarPrivate(await fetchApartmentCalendarPrivate(hostId, slug));
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
           )}
-          <div className="mt-2 flex items-center gap-2">
-            <input
-              type="text"
-              value={newIcalUrl}
-              onChange={(e) => setNewIcalUrl(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  if (!newIcalUrl.trim()) return;
-                  update("icalUrls", [...form.icalUrls, newIcalUrl.trim()]);
-                  setNewIcalUrl("");
-                }
-              }}
-              placeholder="https://..."
-              className="flex-1 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
-            />
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                if (!newIcalUrl.trim()) return;
-                update("icalUrls", [...form.icalUrls, newIcalUrl.trim()]);
-                setNewIcalUrl("");
-              }}
-            >
-              + Add import
-            </Button>
-          </div>
         </SectionCard>
 
         {/* Section G — Pricing */}

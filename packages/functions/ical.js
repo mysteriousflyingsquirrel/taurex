@@ -83,6 +83,32 @@ function dedupeBusyRanges(ranges) {
   return result;
 }
 
+function rangesOverlap(aStart, aEnd, bStart, bEnd) {
+  return !(aEnd < bStart || bEnd < aStart);
+}
+
+function detectConflicts(manualBlocks, importedBusyRanges) {
+  const manual = Array.isArray(manualBlocks) ? manualBlocks : [];
+  const imported = Array.isArray(importedBusyRanges) ? importedBusyRanges : [];
+  const conflicts = [];
+
+  for (const block of manual) {
+    for (const busy of imported) {
+      if (!rangesOverlap(block.startDate, block.endDate, busy.startDate, busy.endDate)) continue;
+      conflicts.push({
+        id: `${block.id || block.sourceId || "manual"}-${busy.sourceId}-${block.startDate}-${busy.startDate}`,
+        startDate: block.startDate < busy.startDate ? busy.startDate : block.startDate,
+        endDate: block.endDate < busy.endDate ? block.endDate : busy.endDate,
+        reason: "manual_vs_import",
+        sourceIds: [String(block.id || block.sourceId || "manual"), String(busy.sourceId)],
+        status: "open",
+      });
+    }
+  }
+
+  return conflicts;
+}
+
 function buildIcsForApartment(apartment) {
   const calendar = apartment?.calendar || {};
   const ranges = [...(calendar.manualBlocks || []), ...(calendar.importedBusyRanges || [])];
@@ -118,5 +144,6 @@ module.exports = {
   addDays,
   parseIcsBusyRanges,
   dedupeBusyRanges,
+  detectConflicts,
   buildIcsForApartment,
 };

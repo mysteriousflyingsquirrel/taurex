@@ -20,6 +20,7 @@ alwaysApply: true
 - Preserve established patterns unless deviation is explicitly justified.
 - Keep business logic in appropriate layers (avoid mixing concerns).
 - Reuse shared services/hooks/types where appropriate.
+- Date invariant: display dates as `dd-mm-yyyy`; keep stored/transmitted date values as `YYYY-MM-DD`.
 
 ## Scope And Safety Constraints
 - Do not invent features or requirements not requested.

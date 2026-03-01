@@ -40,6 +40,7 @@ Stay lightweight when:
 - Keep changes scoped to user intent.
 - Do not edit `apps/*` UI files.
 - Do not perform unrelated architecture refactors.
+- Preserve date invariant in backend contracts: display `dd-mm-yyyy`, storage/query `YYYY-MM-DD`.
 
 ## Required Response Structure
 For non-trivial backend work, return:

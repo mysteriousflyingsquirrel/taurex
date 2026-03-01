@@ -38,7 +38,7 @@ function addMonths(year: number, month: number, count: number): { year: number; 
   return { year: year + Math.floor(m / 12), month: (((m % 12) + 12) % 12) + 1 };
 }
 
-export default function DateRangePicker({ checkIn, checkOut, onCheckInChange, onCheckOutChange, placeholderFrom = "dd.mm.yyyy", placeholderTo = "dd.mm.yyyy" }: DateRangePickerProps) {
+export default function DateRangePicker({ checkIn, checkOut, onCheckInChange, onCheckOutChange, placeholderFrom = "dd-mm-yyyy", placeholderTo = "dd-mm-yyyy" }: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
   const [hoverDay, setHoverDay] = useState<string | null>(null);
   const [selecting, setSelecting] = useState<"checkIn" | "checkOut">(checkIn ? "checkOut" : "checkIn");

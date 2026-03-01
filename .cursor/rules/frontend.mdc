@@ -13,6 +13,7 @@ description: Apply for frontend implementation and UI validation requests in Tau
 - Keep UI behavior aligned with acceptance criteria in `docs/specs/`.
 - Follow `docs/ui/ui-constitution.md` for interaction and visual behavior.
 - Apply `docs/ui/ui-improvement-guide.md` when improving existing UI.
+- Date invariant: UI date display uses `dd-mm-yyyy`; persisted/query dates remain `YYYY-MM-DD`.
 - Preserve theme constraints from `docs/ui/ui-theme.md`:
   - `apps/host`, `apps/booking`, `apps/onboarding`: forced light mode.
   - `apps/apex`: forced dark mode.

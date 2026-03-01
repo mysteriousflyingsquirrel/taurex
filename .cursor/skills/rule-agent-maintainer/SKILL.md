@@ -44,6 +44,7 @@ Maintain high-signal AI guidance assets in this repository:
 6. Add concise, testable output structures where useful.
 7. Validate interactions with existing assets to avoid overlap and contradictory guidance.
 8. Keep changes incremental and reviewable.
+9. Preserve date invariant across guidance: display `dd-mm-yyyy`, storage/query `YYYY-MM-DD`.
 
 ## Output Template
 

@@ -29,6 +29,7 @@ Deployment boundaries:
 ## UI Governance
 - Follow `docs/ui/ui-constitution.md` — binding UI rules for all apps.
 - When improving UI, apply `docs/ui/ui-improvement-guide.md`.
+- Date invariant across apps: display `dd-mm-yyyy`; storage/query data remains `YYYY-MM-DD`.
 
 ## Theme Constraints (Non-Negotiable)
 - host, booking, onboarding: **forced light mode** (no user toggle).

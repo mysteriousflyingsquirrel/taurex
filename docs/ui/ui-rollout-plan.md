@@ -6,7 +6,7 @@ No business logic changes.
 ## Targets
 
 - **Toasts:** bottom-right, success 3s auto-dismiss, error 5s manual dismiss
-- **Dates:** dd.mm.yyyy, time HH:mm only when relevant
+- **Dates:** dd-mm-yyyy, time HH:mm only when relevant
 - **Currency:** CHF 1'000.00 (prefix + space + 2 decimals)
 - **Tables:** actions column rightmost, View / Edit / Delete text buttons, row click = View
 - **Forms:** single column, required *, validation summary at bottom, Cancel left, primary right (explicit label)

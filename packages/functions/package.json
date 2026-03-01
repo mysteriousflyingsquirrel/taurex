@@ -7,6 +7,6 @@
   },
   "dependencies": {
     "firebase-admin": "latest",
-    "firebase-functions": "latest"
+    "firebase-functions": "^4.9.0"
   }
 }

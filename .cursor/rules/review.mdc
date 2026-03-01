@@ -14,6 +14,7 @@ description: Apply for review, audit, validation, and PR-feedback requests. Use 
 - Missing loading, error, and edge-state handling.
 - Alignment with documented acceptance criteria in `docs/specs/`.
 - UI alignment with `docs/ui/ui-constitution.md` when applicable.
+- Date-format compliance: display uses `dd-mm-yyyy`; storage/query values use `YYYY-MM-DD`.
 
 ## Balanced Report Format
 When reviewing, produce:

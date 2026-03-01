@@ -58,7 +58,7 @@ If resolution fails at any step, the user is signed out and shown an error.
 ```
 /login                   → Login page (no auth required)
 /                        → Dashboard (setup guide + overview stats)
-/calendar                → Read-only availability calendar
+/calendar                → Availability timeline + blocking manager
 /apartments              → Apartment list (table)
 /apartments/new          → Create new apartment
 /apartments/{slug}       → Edit existing apartment (autosave)
@@ -101,22 +101,50 @@ Progress bar shows `{done}/{total}`. When all complete: "🎉 All set!" with gre
 
 ## 5. Calendar Page (`/calendar`)
 
-**Purpose**: Read-only overview of apartment availability (sourced from external iCal feeds).
+**Purpose**: Manage availability across apartments with a 48-month timeline, color-coded source visibility, conflict visibility, and in-calendar blocking flow.
 
 ### Controls
 
 | Control | Behaviour |
 |---|---|
-| **Apartment selector** (dropdown) | "All Apartments" (default) or any single apartment |
-| **← Prev / Today / Next →** buttons | Shift view by 1 month. "Today" resets to current month. |
+| **Scope selector** | Toggle between one apartment and all apartments overview |
+| **Apartment selector** | Enabled in single-apartment mode |
+| **Refresh/sync** | Manual sync button to fetch latest external iCal events before actions |
+| **Timeline viewport** | Horizontally scrollable day grid covering current date through next 48 months |
+| **Block mode** | Enables range selection directly on calendar day cells (single-apartment mode only) |
+| **Block confirmation** | Popup confirms selected range before writing manual block |
+| **Conflict dashboard** | Top summary of open conflicts and affected apartments |
 
-### Data Source
+### Timeline Behavior
 
-Availability is fetched from iCal feeds configured per apartment (`icalUrls`). Implementation options:
-- **Cloud Function** that fetches & parses iCal feeds server-side (recommended — avoids CORS)
-- **Client-side** iCal parsing (CORS-dependent)
+- Timeline is horizontally scrollable and renders up to 48 months ahead from the current month.
+- In single-apartment mode, one row is shown for the selected apartment.
+- In all-apartments mode, each apartment is rendered as its own row against the same timeline.
+- Month header uses short month + year labels (`Mon YYYY`).
+- A dedicated top week track displays ISO calendar week numbers aligned to the day grid.
+- Day cells are booking-style square buttons and show the calendar day number.
+- Day states include:
+  - available (green)
+  - imported busy (per-import configured color)
+  - manual block (orange)
+  - conflict (red)
+- If multiple import sources overlap on the same day, the day is treated as conflict (red).
+- Calendar legend includes both fixed statuses and import source color map.
 
-This feature may be deferred to a later phase. The page should gracefully handle missing iCal data.
+### Blocking Flow (strict no-overwrite)
+
+1. Host enables **Block mode**.
+2. Host selects start and end date directly on calendar cells.
+3. Host confirms range in popup.
+4. System runs sync first (auto sync exists in backend, manual sync triggered here).
+5. If conflicts are detected, block write is rejected and conflicts are shown for manual resolution.
+6. If no conflicts, manual block is stored.
+
+### Sync Model
+
+- Automatic periodic sync runs in backend.
+- Manual sync is available in host UI.
+- Imported calendars merge into apartment availability projection.
 
 ---
 
@@ -214,7 +242,13 @@ Each language block:
 
 #### Section F — Booking & Availability (default: collapsed)
 
-Same as before — booking links list and iCal URLs list.
+| Area | Behaviour |
+|---|---|
+| **Booking links** | Same as before (label + URL list) |
+| **Generated export iCal** | Created automatically for every apartment and rotatable via token action |
+| **Import sources** | Host can add/remove external iCal sources (Airbnb/etc.), set source color, and toggle active state |
+| **Import sync state** | Last sync status/time per source shown in host UI |
+| **Conflict handling** | Imported overlaps and block conflicts shown explicitly; no silent overwrite |
 
 #### Section G — Pricing (default: collapsed)
 
@@ -385,7 +419,9 @@ Dashboard
 
 Calendar Page
   └── fetchApartments(hostId)
-  └── iCal availability (Cloud Function or client-side, phase 2)
+  └── refreshApartmentCalendarImports(hostId, apartmentSlug)
+  └── setApartmentManualBlock(hostId, apartmentSlug, block)
+  └── removeApartmentManualBlock(hostId, apartmentSlug, blockId)
 
 Apartments List Page
   └── fetchApartments(hostId)
@@ -396,6 +432,11 @@ Apartment Edit Page
   └── createApartment(hostId, apartment)
   └── updateApartment(hostId, slug, data)       ← autosave
   └── fetchSeasons(hostId)
+  └── rotateApartmentCalendarExportToken(hostId, slug)
+  └── addApartmentCalendarImport(hostId, slug, payload)
+  └── removeApartmentCalendarImport(hostId, slug, importId)
+  └── setApartmentCalendarImportActive(hostId, slug, importId, isActive)
+  └── refreshApartmentCalendarImports(hostId, slug)
   └── uploadApartmentImage(hostId, slug, file)      ← immediate
   └── removeApartmentImage(hostId, slug, filename) ← immediate
 
@@ -441,9 +482,15 @@ Settings Page
 - [ ] Quick actions: "+ Add Apartment" → `/apartments/new`, "Manage Seasons" → `/seasons`, "Settings" → `/settings`.
 
 ### Calendar
-- [ ] Apartment selector offers "All Apartments" (default) and each single apartment.
-- [ ] Prev / Today / Next month buttons shift view by one month; "Today" resets to current month.
-- [ ] Page handles missing or unavailable iCal data without breaking (deferred).
+- [ ] Calendar renders a horizontally scrollable 48-month timeline.
+- [ ] Calendar header shows short month + year labels (`Mon YYYY`) and an aligned ISO week-number track.
+- [ ] Host can switch between single-apartment mode and all-apartments overview.
+- [ ] In single-apartment mode, host enables Block mode, selects date range on day cells, confirms in popup, and requests blocking.
+- [ ] Blocking action requires a successful sync first; conflicts block writes.
+- [ ] Automatic periodic sync plus manual sync button are both supported.
+- [ ] Conflicts are shown explicitly and require manual host resolution (strict no-overwrite).
+- [ ] Day colors follow mapping: available green, manual orange, import source color, conflict red.
+- [ ] Calendar page shows top conflict dashboard and import color legend.
 
 ### Apartments
 - [ ] List view shows columns: Apartment (name + slug), Guests, Bedrooms, m², Price/night, Min Stay, Actions; responsive hiding per spec (e.g. m² hidden on mobile + tablet).
@@ -462,7 +509,9 @@ Settings Page
 - [ ] Section C: Maximum 15 images enforced; "Add images" cell hidden at limit.
 - [ ] Section D: Amenities per language as chips with remove; Add input + Enter; trim and prevent duplicates.
 - [ ] Section E: Address with Nominatim autocomplete (400ms debounce), lat/lng filled on selection.
-- [ ] Section F: Booking links list and iCal URLs list.
+- [ ] Section F: Booking links list and structured iCal import management.
+- [ ] Every apartment has a generated export iCal feed and rotatable export token.
+- [ ] Hosts can add/remove external iCal imports, set per-source colors, and toggle source activation.
 - [ ] Section G: Default price (mandatory, currency from host); per-season overrides for current-year seasons.
 - [ ] Section H: Default min stay (mandatory, min 1); per-season overrides for current-year seasons.
 - [ ] Section I: Promotion uses single-save flow (no Add/Edit buttons, only Remove promotion action).

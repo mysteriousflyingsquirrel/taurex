@@ -90,12 +90,12 @@ White card (on hero layout: positioned on the banner; on flat layout: above apar
 
 | Control | Type | URL Param | Details |
 |---|---|---|---|
-| **Date range** | Custom DateRangePicker | `?checkIn=YYYY-MM-DD&checkOut=YYYY-MM-DD` | Single input field showing formatted dates (`dd.mm.yyyy`). Clicking opens a dropdown calendar showing the **current month and the next month** side-by-side. User selects check-in first, then check-out. Min = today. |
+| **Date range** | Custom DateRangePicker | `?checkIn=YYYY-MM-DD&checkOut=YYYY-MM-DD` | Single input field showing formatted dates (`dd-mm-yyyy`). Clicking opens a dropdown calendar showing the **current month and the next month** side-by-side. User selects check-in first, then check-out. Min = today. |
 | **Guests** | Stepper (−/+) | `?guests=N` | Min 1, max 20. Param omitted when value is 1. |
 | **Show only available** | Checkbox | `?onlyAvailable=1` | Disabled until both dates are selected. Availability filtering requires iCal integration (phase 2). |
 | **Reset** | Text button | — | Clears all filter params (preserves `?lang`). Only visible when any filter is active. |
 
-**DateRangePicker component**: Custom calendar dropdown that displays **two months side-by-side** (current month + next month). Navigation arrows to move forward/backward. Days before today are disabled. First click selects check-in, second click selects check-out (must be after check-in). The selected range is highlighted. The trigger input shows dates in `dd.mm.yyyy` format.
+**DateRangePicker component**: Custom calendar dropdown that displays **two months side-by-side** (current month + next month). Navigation arrows to move forward/backward. Days before today are disabled. First click selects check-in, second click selects check-out (must be after check-in). The selected range is highlighted. The trigger input shows dates in `dd-mm-yyyy` format.
 
 **Active filtering**: Currently only guest count filtering is functional (`facts.guests >= selectedGuests`). Date-based availability filtering will be wired up when iCal integration (Cloud Function) is implemented.
 
@@ -203,7 +203,7 @@ Side-by-side section (`lg:grid-cols-5 gap-8`) below all content sections.
 **Booking (2/5 width)**:
 - Heading: "Booking"
 - White rounded card containing:
-  1. **Selected dates** — Read from `?checkIn` and `?checkOut` URL params (carried from host page). Dates displayed in `dd.mm.yyyy` format. If no dates, show italic hint: "Please select your dates on the apartment listing page to see pricing."
+  1. **Selected dates** — Read from `?checkIn` and `?checkOut` URL params (carried from host page). Dates displayed in `dd-mm-yyyy` format. If no dates, show italic hint: "Please select your dates on the apartment listing page to see pricing."
   2. **Approximate total** — `nights × priceDefault`, with disclaimer "Approximate estimate. Final price at the discretion of the host."
   3. **Best price guarantee** — Indigo banner: "Best price guaranteed! Book directly through our booking request and get the cheapest price available." with checkmark icon
   4. **Minimum stay** — "Minimum stay: X nights" (if >1)
@@ -249,7 +249,7 @@ Custom calendar dropdown for selecting a date range (check-in / check-out).
 
 | Feature | Details |
 |---|---|
-| **Trigger** | Input field showing `dd.mm.yyyy – dd.mm.yyyy` or placeholder text |
+| **Trigger** | Input field showing `dd-mm-yyyy – dd-mm-yyyy` or placeholder text |
 | **Dropdown** | Two months side-by-side (current + next). Navigation arrows to go forward/backward. |
 | **Selection** | First click = check-in, second click = check-out. Range highlighted in between. |
 | **Constraints** | Days before today disabled. Check-out must be after check-in. |
@@ -269,9 +269,9 @@ Simple Leaflet map centred on a single lat/lng coordinate with a marker. Used on
 
 ## 8. Date Format
 
-The default date format across the entire application (booking, host, apex apps) is **`dd.mm.yyyy`** (e.g. `17.02.2026`).
+The default date format across the entire application (booking, host, apex apps) is **`dd-mm-yyyy`** (e.g. `17-02-2026`).
 
-A shared `formatDate(dateString)` helper converts `YYYY-MM-DD` strings to `dd.mm.yyyy` display format.
+A shared `formatDate(dateString)` helper converts `YYYY-MM-DD` strings to `dd-mm-yyyy` display format.
 
 ---
 
@@ -358,7 +358,7 @@ Key behaviours:
 - [ ] Header shows host logo (if `logoUrl` set, 40px height) + host name (left) and language switcher (right when 2+ languages).
 - [ ] When `bannerUrl` is set: hero section with banner background, gradient overlay (dark top to white bottom), transparent header, AvailabilityBar on the banner.
 - [ ] When `bannerUrl` is NOT set: falls back to flat layout (surface header, inline filter bar).
-- [ ] Availability bar shows DateRangePicker with `?checkIn` and `?checkOut` in URL; dates display as `dd.mm.yyyy`.
+- [ ] Availability bar shows DateRangePicker with `?checkIn` and `?checkOut` in URL; dates display as `dd-mm-yyyy`.
 - [ ] Availability bar shows GuestStepper with `?guests=N` (min 1, max 20); param omitted when 1.
 - [ ] "Show only available" checkbox is disabled until both dates are selected (deferred).
 - [ ] Reset button clears all filter params, preserves `?lang`; visible only when any filter is active.
@@ -382,7 +382,7 @@ Key behaviours:
 - [ ] Amenities grid (2–4 cols): white rounded cards, no icons; source `amenities[lang]` with fallback to `en`.
 - [ ] Location: address in card when set; Leaflet map ~200px with single marker when lat/lng valid; map interactive (zoom/pan).
 - [ ] Availability section shows placeholder "Coming soon…" card (deferred).
-- [ ] Booking section: selected dates from URL in `dd.mm.yyyy` or hint to select on listing; approximate total = nights × priceDefault with disclaimer; best price guarantee banner; minimum stay from seasons when >1; Booking Request button disabled; external `bookingLinks[]` open in new tab.
+- [ ] Booking section: selected dates from URL in `dd-mm-yyyy` or hint to select on listing; approximate total = nights × priceDefault with disclaimer; best price guarantee banner; minimum stay from seasons when >1; Booking Request button disabled; external `bookingLinks[]` open in new tab.
 - [ ] "More apartments" row: pill links to other host apartments (excluding current), each to `/{hostSlug}/{apartmentSlug}`.
 - [ ] Apartment Not Found shows message and link back to `/{hostSlug}`.
 
@@ -391,12 +391,12 @@ Key behaviours:
 - [ ] **Button**: rounded; variants `primary` (indigo), `secondary` (grey), `outline` (border).
 - [ ] **ImageCarousel**: props `images`, optional `height`, optional `preferThumbnail`; cross-fade, arrows, dots, touch swipe, lazy loading. When `preferThumbnail` is true, uses `src` (thumbnail); otherwise uses `srcBig` with fallback to `src`.
 - [ ] **GuestStepper**: props `value`, `onChange`, `min`, `max`.
-- [ ] **DateRangePicker**: trigger shows `dd.mm.yyyy` range or placeholder; dropdown two months side-by-side with nav arrows; first click check-in, second click check-out; range highlighted; days before today disabled; check-out after check-in; closes on outside click or after selecting check-out.
+- [ ] **DateRangePicker**: trigger shows `dd-mm-yyyy` range or placeholder; dropdown two months side-by-side with nav arrows; first click check-in, second click check-out; range highlighted; days before today disabled; check-out after check-in; closes on outside click or after selecting check-out.
 - [ ] **ApartmentMap**: props `apartments`, `hostSlug`, `lang`; markers with popups (name + link); auto-fits bounds for apartments with valid lat/lng.
 - [ ] **LocationMap**: props `lat`, `lng`, `label`; single marker, interactive.
 
 ### Date and Currency Formatting
-- [ ] `formatDate(YYYY-MM-DD)` displays as `dd.mm.yyyy` (e.g. 17.02.2026).
+- [ ] `formatDate(YYYY-MM-DD)` displays as `dd-mm-yyyy` (e.g. 17-02-2026).
 - [ ] Prices display host `baseCurrency` symbol (CHF, €, $, £ per spec table).
 
 ### Responsive Breakpoints

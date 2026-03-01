@@ -28,6 +28,7 @@ Stay lightweight when:
 - Explain why the issue happens, not just where.
 - Propose minimal, targeted remediation.
 - Avoid unrelated cleanup while debugging.
+- Keep date-format fixes aligned with invariant: display `dd-mm-yyyy`, storage/query `YYYY-MM-DD`.
 
 ## Output Template (Required)
 Error Signals

@@ -18,6 +18,14 @@ service cloud.firestore {
           && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.hostId == hostId;
     }
 
+    function hasNoSensitiveCalendarFields() {
+      return !("calendar" in request.resource.data)
+          || (
+            !("exportToken" in request.resource.data.calendar)
+            && !("imports" in request.resource.data.calendar)
+          );
+    }
+
     // ─── Users collection ──────────────────────────────────
     match /users/{uid} {
       allow read: if isApex() || (isSignedIn() && request.auth.uid == uid);
@@ -34,8 +42,8 @@ service cloud.firestore {
       match /apartments/{apartmentId} {
         // Public read (booking app needs this for apartment listing/detail)
         allow read: if true;
-        // Host owner or apex can write
-        allow write: if isApex() || isHostOwner(hostId);
+        // Host owner or apex can write, but public apartment docs must not store sensitive calendar internals
+        allow write: if (isApex() || isHostOwner(hostId)) && hasNoSensitiveCalendarFields();
       }
 
       // ─── Seasons subcollection ─────────────────────────
@@ -44,6 +52,11 @@ service cloud.firestore {
         allow read: if true;
         // Host owner or apex can write
         allow write: if isApex() || isHostOwner(hostId);
+      }
+
+      // ─── Private apartment calendar internals ─────────
+      match /apartmentCalendarsPrivate/{apartmentSlug} {
+        allow read, write: if isApex() || isHostOwner(hostId);
       }
 
       // ─── Catch-all for future subcollections ───────────

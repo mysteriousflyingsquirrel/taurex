@@ -23,7 +23,7 @@ Services used:
 - Firebase Auth
 - Firestore
 - Firebase Storage
-- Cloud Functions (later)
+- Cloud Functions
 
 Environment variables:
 
@@ -162,8 +162,9 @@ Rules are implemented in `firestore.rules` at the repository root.
 |---|---|---|---|---|
 | `users/{uid}` | Apex OR own UID | Apex only | Apex only | Apex only |
 | `hosts/{hostId}` | Public | Apex only | Apex OR host owner | Apex only |
-| `hosts/{hostId}/apartments/{slug}` | Public | Apex OR host owner | Apex OR host owner | Apex OR host owner |
+| `hosts/{hostId}/apartments/{slug}` | Public (sanitized apartment + availability projection) | Apex OR host owner | Apex OR host owner | Apex OR host owner |
 | `hosts/{hostId}/seasons/{id}` | Public | Apex OR host owner | Apex OR host owner | Apex OR host owner |
+| `hosts/{hostId}/apartmentCalendarsPrivate/{slug}` | Apex OR host owner | Apex OR host owner | Apex OR host owner | Apex OR host owner |
 | `hosts/{hostId}/{other}/{docId}` | Apex OR host owner | Apex OR host owner | Apex OR host owner | Apex OR host owner |
 
 ### Key Enforcement
@@ -171,13 +172,14 @@ Rules are implemented in `firestore.rules` at the repository root.
 - Host isolation: a host user can only access `hosts/{hostId}/...` where their `users/{uid}.hostId` matches
 - Apex bypasses all host-scoping restrictions
 - Public read on hosts, apartments, and seasons enables the booking app (no auth required)
+- Sensitive calendar internals (iCal import URLs, sync errors/status, export tokens, conflict internals) must be host-private in `apartmentCalendarsPrivate`
 - Users collection is locked down: only apex can write, users can only read their own profile
 - Catch-all rule for future subcollections defaults to host-owner + apex access
 
-### Not Yet Implemented
+### Implemented Infrastructure Notes
 
-- **Storage rules**: No `storage.rules` file exists. Firebase Storage is currently using default rules.
-- **Cloud Functions**: Not yet implemented. Planned for iCal parsing, user creation, and admin operations.
+- **Storage rules** exist in `storage.rules`.
+- **Cloud Functions** are implemented for calendar sync/export flows (including scheduled and callable sync).
 
 ---
 

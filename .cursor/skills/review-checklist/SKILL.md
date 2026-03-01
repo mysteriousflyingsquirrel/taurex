@@ -34,6 +34,7 @@ Use relevant references based on the change surface:
    - security and multi-tenant isolation risks
    - loading/error/empty/edge-state handling gaps
    - architecture/data-model/rules implications when relevant
+   - date-format compliance (`dd-mm-yyyy` display, `YYYY-MM-DD` storage/query)
 6. Capture open questions that block confidence.
 7. List residual risks and concrete test gaps.
 8. Do not implement fixes unless explicitly requested.

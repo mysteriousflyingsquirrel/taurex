@@ -24,6 +24,7 @@ description: Apply for planning, scoping, and specification requests. Enforce so
 - Keep scope minimal and highlight scope creep or dependency risks.
 - Prefer smallest viable deliverable when uncertainty exists.
 - Call out cross-surface impacts (UI, backend, data model, rules) when relevant.
+- Keep date requirements explicit: display format `dd-mm-yyyy`, storage/query format `YYYY-MM-DD`.
 
 ## Constraints
 - Do not write implementation code when the request is planning/spec-only.

@@ -32,6 +32,7 @@ Review and align with:
 5. Produce explicit, testable acceptance criteria.
 6. Call out cross-surface impacts (UI, backend, data model, rules) when relevant.
 7. Keep output implementation-free unless the user explicitly asks for code.
+8. Enforce date requirements in specs: display `dd-mm-yyyy`, storage/query `YYYY-MM-DD`.
 
 ## Output Template
 

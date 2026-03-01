@@ -28,6 +28,7 @@ Stay lightweight when:
 - If failures appear, identify likely root causes before suggesting fixes.
 - Keep fix guidance scoped and preserve intended behavior.
 - Do not propose broad refactors while triaging tests.
+- Include checks for date-format invariant: display `dd-mm-yyyy`, storage/query `YYYY-MM-DD`.
 
 ## Output Template (Required)
 Test Scope

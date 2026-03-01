@@ -45,6 +45,7 @@ Stay lightweight when:
 - Keep UI components focused; avoid moving backend/business logic into frontend.
 - Do not modify backend contracts unless explicitly requested.
 - Keep edits scoped; avoid unrelated refactors.
+- Enforce date invariant: display `dd-mm-yyyy`; keep storage/query formats as `YYYY-MM-DD`.
 
 ## Required Response Structure
 For non-trivial work, return:

@@ -36,8 +36,9 @@ Collect and use:
 3. Validate key user paths and edge states (loading/error/empty) for affected apps.
 4. Confirm no obvious regressions against referenced acceptance criteria.
 5. Identify security/tenancy/rules risks when backend or data behavior changed.
-6. Summarize pass/fail status with evidence and remaining risk.
-7. If failures are found, provide smallest safe fix path and re-check steps.
+6. Validate date-format consistency: display `dd-mm-yyyy`, storage/query `YYYY-MM-DD`.
+7. Summarize pass/fail status with evidence and remaining risk.
+8. If failures are found, provide smallest safe fix path and re-check steps.
 
 ## Output Template
 

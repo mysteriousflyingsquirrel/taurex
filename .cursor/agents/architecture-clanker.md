@@ -43,6 +43,7 @@ Stay lightweight when:
 - Explicitly call out compatibility and migration concerns.
 - Avoid speculative redesign unless user explicitly asks.
 - Do not take direct implementation ownership.
+- Preserve date invariant in recommendations: display `dd-mm-yyyy`, storage/query `YYYY-MM-DD`.
 
 ## Required Output Contract
 Decision

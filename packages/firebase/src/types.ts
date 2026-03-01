@@ -109,6 +109,7 @@ export type ApartmentCalendarImport = {
   id: string;
   name: string;
   url: string;
+  color: string; // Hex, e.g. "#3B82F6"
   isActive: boolean;
   lastStatus?: CalendarSyncStatus;
   lastSyncAt?: string;
@@ -123,20 +124,35 @@ export type ApartmentCalendarManualBlock = {
 };
 
 export type ApartmentCalendarBusyRange = {
-  source: "manual" | "import";
+  source: "import";
   sourceId: string;
   startDate: string;
   endDate: string;
   note?: string;
 };
 
+export type ApartmentCalendarConflict = {
+  id: string;
+  startDate: string;
+  endDate: string;
+  reason: string;
+  sourceIds: string[];
+  status: "open" | "resolved";
+};
+
 export type ApartmentCalendar = {
-  exportToken: string;
-  imports: ApartmentCalendarImport[];
   manualBlocks: ApartmentCalendarManualBlock[];
   importedBusyRanges: ApartmentCalendarBusyRange[];
+  conflicts: ApartmentCalendarConflict[];
   lastAutoSyncAt?: string;
   lastInternalUpdateAt?: string;
+};
+
+export type ApartmentCalendarPrivate = {
+  exportToken: string;
+  imports: ApartmentCalendarImport[];
+  conflictPolicy: "strict-no-overwrite";
+  updatedAt?: string;
 };
 
 export type Apartment = {
@@ -196,11 +212,11 @@ export function formatMoney(amount: number, code: CurrencyCode): string {
   return `${symbol} ${sign}${withSep}.${decimal}`;
 }
 
-/** Format a YYYY-MM-DD date string as dd.mm.yyyy */
+/** Format a YYYY-MM-DD date string as dd-mm-yyyy */
 export function formatDate(dateStr: string): string {
   if (!dateStr) return "";
   const parts = dateStr.split("-");
   if (parts.length !== 3) return dateStr;
   const [y, m, d] = parts;
-  return `${d}.${m}.${y}`;
+  return `${d}-${m}-${y}`;
 }

@@ -38,6 +38,7 @@ Stay lightweight (or do not activate) when:
 - Do not implement code; orchestrate and de-risk.
 - Do not invent features beyond user intent.
 - Prefer references to existing specs/patterns instead of introducing new architecture.
+- Maintain date invariant in plans: UI display `dd-mm-yyyy`, storage/query `YYYY-MM-DD`.
 
 ## Output Format (Compact, Required)
 Always respond using this exact structure:

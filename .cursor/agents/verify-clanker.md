@@ -28,6 +28,7 @@ Stay lightweight when:
 - Check for common misses: edge cases, loading/error paths, regression risks.
 - Do not accept completion claims without explicit verification signals.
 - Be concise and decisive in pass/fail judgments.
+- Verify date-format invariant: display `dd-mm-yyyy`, storage/query `YYYY-MM-DD`.
 
 ## Output Template (Required)
 Claimed Done
