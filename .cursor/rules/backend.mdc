@@ -1,19 +1,24 @@
 ---
-description: Enforce backend patterns when editing services, models, and cloud functions
-globs: packages/firebase/**
+description: Apply for backend implementation and data-access validation requests in `packages/firebase`. Enforce service-layer patterns, explicit validation/auth checks, tenancy isolation, and security/rules impact awareness.
 ---
 
 # Backend Standards
 
-## Requirements
-- Business logic belongs in service files under `packages/firebase/src/services/`, not inline in components.
-- Validate inputs — never trust client data.
-- Follow existing patterns in the codebase before introducing new ones.
-- Consider Firestore read/write costs — avoid unnecessary reads, use batched writes where appropriate.
-- Always consider multi-tenant isolation — host data must never leak across hosts.
-- Always specify Firestore security rule implications for data model changes.
+## When This Rule Applies
+- Backend implementation work in `packages/firebase`.
+- Requests affecting service behavior, data access patterns, validation, or model contracts.
+- Post-change backend quality checks and regression analysis.
 
-## Constraints
-- Do not create UI components — that belongs in `apps/`.
-- Do not skip input validation or auth checks.
-- Keep changes focused — one concern per change.
+## Backend Priorities
+- Keep business logic in `packages/firebase/src/services/` and shared backend layers.
+- Validate inputs explicitly and enforce auth/permission checks; never trust client input.
+- Preserve multi-tenant isolation for host-scoped data access.
+- Call out Firestore security/rules implications for model or access-pattern changes.
+- Consider Firestore read/write costs; avoid unnecessary reads and use efficient write patterns.
+- Prefer existing backend patterns before introducing new structures.
+
+## Implementation Boundaries
+- Do not implement UI work in `apps/*`.
+- Do not skip validation/auth checks or silently swallow backend errors.
+- Keep changes focused on requested backend scope; avoid unrelated refactors.
+- Escalate architecture/data-model shifts as explicit decisions instead of implicit code drift.

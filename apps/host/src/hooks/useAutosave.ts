@@ -1,103 +1,87 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface UseAutosaveOptions<T> {
-  /** The data object to watch */
-  data: T;
-  /** Async save function. Receives the current data. */
-  onSave: (data: T) => Promise<void>;
-  /** Debounce delay in ms. Default 1500. */
-  delay?: number;
-  /** Set to false to disable autosave (e.g. during initial create). */
-  enabled?: boolean;
+  enabled: boolean;
+  isDirty: boolean;
+  watch: T;
+  delayMs?: number;
+  saveFn: (next: T) => Promise<void>;
 }
 
-interface UseAutosaveReturn {
-  /** True while a save is in progress */
-  saving: boolean;
-  /** True for a short time after a successful save */
-  saved: boolean;
-  /** Error message if last save failed */
-  error: string | null;
-  /** Trigger an immediate save */
-  saveNow: () => void;
+interface UseAutosaveResult {
+  isAutosaving: boolean;
+  lastSavedAt: number | null;
+  lastError: Error | null;
 }
 
 export function useAutosave<T>({
-  data,
-  onSave,
-  delay = 1500,
-  enabled = true,
-}: UseAutosaveOptions<T>): UseAutosaveReturn {
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  enabled,
+  isDirty,
+  watch,
+  delayMs = 1500,
+  saveFn,
+}: UseAutosaveOptions<T>): UseAutosaveResult {
+  const [isAutosaving, setIsAutosaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const [lastError, setLastError] = useState<Error | null>(null);
 
-  const snapshotRef = useRef<string>("");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const onSaveRef = useRef(onSave);
-  onSaveRef.current = onSave;
-  const dataRef = useRef(data);
-  dataRef.current = data;
+  const savingRef = useRef(false);
+  const queuedRef = useRef(false);
+  const latestWatchRef = useRef(watch);
 
-  // Initialize snapshot on mount (or when enabled changes)
+  latestWatchRef.current = watch;
+
   useEffect(() => {
-    if (enabled) {
-      snapshotRef.current = JSON.stringify(data);
+    if (!enabled || !isDirty) return;
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled]);
 
-  const doSave = useCallback(async () => {
-    const current = JSON.stringify(dataRef.current);
-    if (current === snapshotRef.current) return;
-
-    setSaving(true);
-    setError(null);
-    try {
-      await onSaveRef.current(dataRef.current);
-      snapshotRef.current = JSON.stringify(dataRef.current);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed");
-    } finally {
-      setSaving(false);
-    }
-  }, []);
-
-  // Debounced auto-save on data changes
-  useEffect(() => {
-    if (!enabled) return;
-    const current = JSON.stringify(data);
-    if (current === snapshotRef.current) return;
-
-    if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
-      doSave();
-    }, delay);
+      void runSave();
+    }, delayMs);
 
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [data, delay, enabled, doSave]);
-
-  // Save on beforeunload if dirty
-  useEffect(() => {
-    if (!enabled) return;
-    const handler = (e: BeforeUnloadEvent) => {
-      const current = JSON.stringify(dataRef.current);
-      if (current !== snapshotRef.current) {
-        e.preventDefault();
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
     };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [enabled]);
+  }, [enabled, isDirty, watch, delayMs]);
 
-  const saveNow = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    doSave();
-  }, [doSave]);
+  const runSave = async () => {
+    if (!enabled || !isDirty) return;
 
-  return { saving, saved, error, saveNow };
+    if (savingRef.current) {
+      queuedRef.current = true;
+      return;
+    }
+
+    savingRef.current = true;
+    setIsAutosaving(true);
+    setLastError(null);
+
+    try {
+      await saveFn(latestWatchRef.current);
+      setLastSavedAt(Date.now());
+    } catch (err) {
+      setLastError(err instanceof Error ? err : new Error("Autosave failed"));
+    } finally {
+      savingRef.current = false;
+      setIsAutosaving(false);
+    }
+
+    if (queuedRef.current) {
+      queuedRef.current = false;
+      void runSave();
+    }
+  };
+
+  return {
+    isAutosaving,
+    lastSavedAt,
+    lastError,
+  };
 }

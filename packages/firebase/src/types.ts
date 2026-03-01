@@ -95,6 +95,50 @@ export type BookingLink = {
   url: string;
 };
 
+export type ApartmentPromotion = {
+  name: string;
+  discountPercent: number; // integer 1..99
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  isActive?: boolean;
+};
+
+export type CalendarSyncStatus = "pending" | "ok" | "error";
+
+export type ApartmentCalendarImport = {
+  id: string;
+  name: string;
+  url: string;
+  isActive: boolean;
+  lastStatus?: CalendarSyncStatus;
+  lastSyncAt?: string;
+  lastError?: string;
+};
+
+export type ApartmentCalendarManualBlock = {
+  id: string;
+  startDate: string;
+  endDate: string;
+  note?: string;
+};
+
+export type ApartmentCalendarBusyRange = {
+  source: "manual" | "import";
+  sourceId: string;
+  startDate: string;
+  endDate: string;
+  note?: string;
+};
+
+export type ApartmentCalendar = {
+  exportToken: string;
+  imports: ApartmentCalendarImport[];
+  manualBlocks: ApartmentCalendarManualBlock[];
+  importedBusyRanges: ApartmentCalendarBusyRange[];
+  lastAutoSyncAt?: string;
+  lastInternalUpdateAt?: string;
+};
+
 export type Apartment = {
   id: string;
   slug: string;
@@ -105,9 +149,11 @@ export type Apartment = {
   amenities: Record<string, string[]>; // keyed by language code
   location: ApartmentLocation;
   bookingLinks: BookingLink[];
-  icalUrls: string[];
+  icalUrls?: string[]; // legacy
+  calendar?: ApartmentCalendar;
   priceDefault: number;
   prices?: Record<string, number>; // keyed by seasonId
+  promotion?: ApartmentPromotion;
   minStayDefault: number;
   minStay?: Record<string, number>; // keyed by seasonId
 };

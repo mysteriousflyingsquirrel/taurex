@@ -1,0 +1,295 @@
+"use client";
+
+import { useState, useRef, useEffect, useMemo } from "react";
+import { formatDate } from "@taurex/firebase";
+
+interface DateRangePickerProps {
+  checkIn: string;
+  checkOut: string;
+  onCheckInChange: (date: string) => void;
+  onCheckOutChange: (date: string) => void;
+  placeholderFrom?: string;
+  placeholderTo?: string;
+}
+
+const DAY_HEADERS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+
+function pad2(n: number): string {
+  return n.toString().padStart(2, "0");
+}
+
+function toDateStr(year: number, month: number, day: number): string {
+  return `${year}-${pad2(month)}-${pad2(day)}`;
+}
+
+function daysInMonth(year: number, month: number): number {
+  return new Date(year, month, 0).getDate();
+}
+
+function firstWeekday(year: number, month: number): number {
+  const d = new Date(year, month - 1, 1).getDay();
+  return d === 0 ? 6 : d - 1;
+}
+
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+function addMonths(
+  year: number,
+  month: number,
+  count: number
+): { year: number; month: number } {
+  const m = month - 1 + count;
+  return { year: year + Math.floor(m / 12), month: (((m % 12) + 12) % 12) + 1 };
+}
+
+export default function DateRangePicker({
+  checkIn,
+  checkOut,
+  onCheckInChange,
+  onCheckOutChange,
+  placeholderFrom = "Select start date",
+  placeholderTo = "Select end date",
+}: DateRangePickerProps) {
+  const [open, setOpen] = useState(false);
+  const [hoverDay, setHoverDay] = useState<string | null>(null);
+  const [selecting, setSelecting] = useState<"checkIn" | "checkOut">(
+    checkIn ? "checkOut" : "checkIn"
+  );
+  const now = new Date();
+  const todayStr = toDateStr(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  const [baseYear, setBaseYear] = useState(now.getFullYear());
+  const [baseMonth, setBaseMonth] = useState(now.getMonth() + 1);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    if (open) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const rightMonth = useMemo(
+    () => addMonths(baseYear, baseMonth, 1),
+    [baseYear, baseMonth]
+  );
+
+  const goBack = () => {
+    const prev = addMonths(baseYear, baseMonth, -1);
+    const nowMonth = now.getFullYear() * 12 + now.getMonth();
+    const prevMonth = prev.year * 12 + (prev.month - 1);
+    if (prevMonth >= nowMonth) {
+      setBaseYear(prev.year);
+      setBaseMonth(prev.month);
+    }
+  };
+
+  const goForward = () => {
+    const next = addMonths(baseYear, baseMonth, 1);
+    setBaseYear(next.year);
+    setBaseMonth(next.month);
+  };
+
+  const handleDayClick = (day: string) => {
+    if (day < todayStr) return;
+    if (selecting === "checkIn") {
+      onCheckInChange(day);
+      if (checkOut && day >= checkOut) onCheckOutChange("");
+      setSelecting("checkOut");
+    } else if (day <= checkIn) {
+      onCheckInChange(day);
+      onCheckOutChange("");
+      setSelecting("checkOut");
+    } else {
+      onCheckOutChange(day);
+      setSelecting("checkIn");
+      setOpen(false);
+    }
+  };
+
+  const handleOpen = () => {
+    setOpen(true);
+    setBaseYear(now.getFullYear());
+    setBaseMonth(now.getMonth() + 1);
+    if (!checkIn) setSelecting("checkIn");
+    else if (!checkOut) setSelecting("checkOut");
+    else setSelecting("checkIn");
+  };
+
+  const displayValue = () => {
+    const from = checkIn ? formatDate(checkIn) : placeholderFrom;
+    const to = checkOut ? formatDate(checkOut) : placeholderTo;
+    return `${from}  -  ${to}`;
+  };
+
+  const isInRange = (day: string): boolean => {
+    if (checkIn && checkOut) return day >= checkIn && day <= checkOut;
+    if (
+      checkIn &&
+      !checkOut &&
+      hoverDay &&
+      hoverDay > checkIn &&
+      selecting === "checkOut"
+    ) {
+      return day >= checkIn && day <= hoverDay;
+    }
+    return false;
+  };
+
+  const isStart = (day: string) => day === checkIn;
+  const isEnd = (day: string) => day === checkOut;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={handleOpen}
+        className={`w-full rounded-lg border bg-surface px-3 py-2 text-left text-sm transition focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none ${checkIn || checkOut ? "border-input text-foreground" : "border-input text-muted"}`}
+      >
+        {displayValue()}
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full z-50 mt-2 rounded-xl border border-border bg-surface p-4 shadow-xl">
+          <div className="mb-3 flex items-center justify-between">
+            <button
+              onClick={goBack}
+              className="rounded p-1 text-muted hover:bg-surface-alt hover:text-foreground"
+              aria-label="Previous month"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <div className="flex gap-8 text-sm font-semibold text-foreground">
+              <span>
+                {MONTH_NAMES[baseMonth - 1]} {baseYear}
+              </span>
+              <span>
+                {MONTH_NAMES[rightMonth.month - 1]} {rightMonth.year}
+              </span>
+            </div>
+            <button
+              onClick={goForward}
+              className="rounded p-1 text-muted hover:bg-surface-alt hover:text-foreground"
+              aria-label="Next month"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex gap-6">
+            <MonthGrid
+              year={baseYear}
+              month={baseMonth}
+              todayStr={todayStr}
+              isInRange={isInRange}
+              isStart={isStart}
+              isEnd={isEnd}
+              onDayClick={handleDayClick}
+              onDayHover={setHoverDay}
+            />
+            <MonthGrid
+              year={rightMonth.year}
+              month={rightMonth.month}
+              todayStr={todayStr}
+              isInRange={isInRange}
+              isStart={isStart}
+              isEnd={isEnd}
+              onDayClick={handleDayClick}
+              onDayHover={setHoverDay}
+            />
+          </div>
+          <p className="mt-3 text-center text-xs text-muted">
+            {selecting === "checkIn" ? "Select start date" : "Select end date"}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MonthGrid({
+  year,
+  month,
+  todayStr,
+  isInRange,
+  isStart,
+  isEnd,
+  onDayClick,
+  onDayHover,
+}: {
+  year: number;
+  month: number;
+  todayStr: string;
+  isInRange: (day: string) => boolean;
+  isStart: (day: string) => boolean;
+  isEnd: (day: string) => boolean;
+  onDayClick: (day: string) => void;
+  onDayHover: (day: string) => void;
+}) {
+  const days = daysInMonth(year, month);
+  const offset = firstWeekday(year, month);
+
+  return (
+    <div className="w-[252px]">
+      <div className="grid grid-cols-7 gap-0 text-center">
+        {DAY_HEADERS.map((d) => (
+          <span key={d} className="pb-2 text-xs font-medium text-muted">
+            {d}
+          </span>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-0">
+        {Array.from({ length: offset }, (_, i) => (
+          <span key={`e${i}`} />
+        ))}
+        {Array.from({ length: days }, (_, i) => {
+          const day = toDateStr(year, month, i + 1);
+          const disabled = day < todayStr;
+          const inRange = isInRange(day);
+          const start = isStart(day);
+          const end = isEnd(day);
+          const isEndpoint = start || end;
+          return (
+            <button
+              key={day}
+              type="button"
+              disabled={disabled}
+              onClick={() => onDayClick(day)}
+              onMouseEnter={() => onDayHover(day)}
+              className={`flex h-9 w-9 items-center justify-center text-sm transition-colors ${disabled ? "cursor-not-allowed text-muted" : isEndpoint ? "rounded-full bg-primary font-semibold text-primary-fg" : inRange ? "bg-accent text-accent-fg" : "text-foreground hover:rounded-full hover:bg-surface-alt"}`}
+            >
+              {i + 1}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

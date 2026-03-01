@@ -7,12 +7,15 @@ interface ImageCarouselProps {
   images: ApartmentImage[];
   height?: string;
   emptyText?: string;
+  /** When true, prefer the smaller thumbnail (src) over the full-res (srcBig). */
+  preferThumbnail?: boolean;
 }
 
 export default function ImageCarousel({
   images,
   height = "h-64 md:h-80 lg:h-96",
   emptyText = "No images available",
+  preferThumbnail = false,
 }: ImageCarouselProps) {
   const [current, setCurrent] = useState(0);
   const touchStartX = useRef<number | null>(null);
@@ -62,7 +65,7 @@ export default function ImageCarousel({
       {images.map((img, i) => (
         <img
           key={img.src}
-          src={img.srcBig ?? img.src}
+          src={preferThumbnail ? img.src : (img.srcBig ?? img.src)}
           alt={img.alt || ""}
           loading={i === 0 ? "eager" : "lazy"}
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ${i === current ? "opacity-100" : "opacity-0"}`}

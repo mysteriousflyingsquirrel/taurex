@@ -1,11 +1,11 @@
 ---
-description: Project-specific architecture, context, and constraints for Taurex.one
-alwaysApply: true
+description: Taurex architecture and platform baseline. Apply when requests involve cross-app decisions, backend/data-model changes, tenancy/security boundaries, or source-of-truth alignment.
+alwaysApply: false
 ---
 
 # Taurex.one
 
-## Architecture
+## Repository Context
 Monorepo (npm workspaces):
 - `apps/onboarding` — marketing + onboarding flows (Next.js 15, SSR/SSG)
 - `apps/booking` — public host/apartment pages (Next.js 15, SSR/SSG)
@@ -13,34 +13,52 @@ Monorepo (npm workspaces):
 - `apps/apex` — platform admin dashboard (Vite 6 + React SPA)
 - `packages/firebase` — shared backend (`@taurex/firebase`: Auth, Firestore, Cloud Functions, Storage)
 
-Each app deploys independently. Host = host app. Admin = apex app.
+Deployment boundaries:
+- Each app deploys independently.
+- Host-facing operations = `apps/host`.
+- Platform-admin operations = `apps/apex`.
 
-## Source of Truth
+## Canonical Source Of Truth
 - `docs/architecture.md` — system architecture
 - `docs/data-model.md` — Firestore data model
 - `docs/firebase.md` — Firebase configuration
 - `docs/specs/` — app specifications (host, booking, apex, onboarding)
 - `docs/billing.md` — billing logic
+- `storage.rules` — security model for storage access
 
-## UI
+## UI Governance
 - Follow `docs/ui/ui-constitution.md` — binding UI rules for all apps.
 - When improving UI, apply `docs/ui/ui-improvement-guide.md`.
 
-## Theme
+## Theme Constraints (Non-Negotiable)
 - host, booking, onboarding: **forced light mode** (no user toggle).
 - apex: **forced dark mode** (no user toggle).
 - Tokens: CSS custom properties + Tailwind v4 `@theme inline`.
 - Full spec: `docs/ui/ui-theme.md`.
 
-## Data & Security
+## Data, Tenancy, And Security Constraints (Non-Negotiable)
 - All domain data lives under `hosts/{hostId}/` in Firestore.
 - Never break multi-tenant isolation — host data must never leak across hosts.
-- Always consider Firestore security rule implications for data model changes.
-- Data model specs, API contracts, and permission matrices live in `docs/`.
+- Always surface security and rules implications for data-model or access-pattern changes.
+- Keep API/data contract changes aligned with specs and explicit compatibility notes.
 
-## User Types
+## User Types And Access Boundaries
 | Type | Access | Auth |
 |---|---|---|
 | Guest | Public booking pages, onboarding site | None |
 | Host | Own host data via host.taurex.one | Firebase Auth |
 | Apex | All hosts via apex.taurex.one | Firebase Auth + `admin: true` claim |
+
+## Decision Guardrails
+- Prefer extending existing patterns over introducing architecture drift.
+- Keep proposals scoped to user intent and current documented architecture.
+- For cross-surface changes, explicitly call out dependencies and blast radius.
+- For backend or data-model changes, explicitly call out:
+  - tenant-isolation impact
+  - auth/permission impact
+  - rules/security impact
+  - migration or compatibility impact
+
+## Usage Intent
+- This rule should guide architecture/context-sensitive decisions.
+- For narrow single-file UI tweaks, apply only lightweight context from this rule.

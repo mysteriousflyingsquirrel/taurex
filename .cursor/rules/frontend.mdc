@@ -1,16 +1,24 @@
 ---
-description: Enforce frontend patterns when editing pages and components
-globs: apps/**/*.tsx,apps/**/*.ts
+description: Apply for frontend implementation and UI validation requests in Taurex apps. Enforce UI/source-of-truth alignment, robust loading-error-empty states, and strict frontend/backend boundaries.
 ---
 
 # Frontend Standards
 
-## Requirements
-- Always handle loading and error states — never leave the user with a blank screen.
-- Consume services and shared types from `packages/firebase/` — do not inline business logic.
-- Follow `docs/ui/ui-constitution.md` strictly for all visual and interaction decisions.
-- When improving UI, apply `docs/ui/ui-improvement-guide.md`.
+## When This Rule Applies
+- Frontend implementation requests in `apps/host`, `apps/booking`, `apps/onboarding`, and `apps/apex`.
+- UI behavior, interaction flow, and post-change frontend quality checks.
 
-## Constraints
-- Do not modify backend services or data contracts.
-- Do not introduce architectural decisions — reference existing patterns.
+## Frontend Priorities
+- Implement clear loading, error, and empty states for user-facing flows.
+- Keep UI behavior aligned with acceptance criteria in `docs/specs/`.
+- Follow `docs/ui/ui-constitution.md` for interaction and visual behavior.
+- Apply `docs/ui/ui-improvement-guide.md` when improving existing UI.
+- Preserve theme constraints from `docs/ui/ui-theme.md`:
+  - `apps/host`, `apps/booking`, `apps/onboarding`: forced light mode.
+  - `apps/apex`: forced dark mode.
+
+## Implementation Boundaries
+- Keep business logic in backend/shared layers; consume services and shared types from `packages/firebase/`.
+- Do not modify backend services, storage/security rules, or data contracts unless explicitly requested.
+- Reuse existing frontend patterns/components before introducing new structure.
+- Keep edits scoped to requested UI surfaces; avoid unrelated refactors.

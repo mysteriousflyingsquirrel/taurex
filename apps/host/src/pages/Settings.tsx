@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   updateHost,
   fetchApartments,
@@ -16,12 +16,12 @@ import {
 } from "@taurex/firebase";
 import { useHost } from "../contexts/HostContext";
 import PageHeader from "../components/PageHeader";
-import Button from "../components/Button";
 import ImageUpload from "../components/ImageUpload";
-import StickyFormFooter from "../components/StickyFormFooter";
 import DiscardChangesModal from "../components/DiscardChangesModal";
 import { useToast } from "../components/Toast";
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
+import { useAutosave } from "../hooks/useAutosave";
+import { HOST_AUTOSAVE_DELAY_MS } from "../config/autosave";
 
 interface SettingsData {
   languages: LanguageCode[];
@@ -41,7 +41,6 @@ export default function Settings() {
     baseCurrency,
   });
   const [apartmentCount, setApartmentCount] = useState(0);
-  const [saving, setSaving] = useState(false);
   const toast = useToast();
 
   // Sync when host data loads
@@ -62,30 +61,34 @@ export default function Settings() {
   const { showModal, confirmDiscard, cancelDiscard } =
     useUnsavedChangesGuard(isDirty);
 
-  const handleSave = useCallback(
-    async () => {
-      if (!hostId || !isDirty) return;
-      setSaving(true);
-      try {
+  const { lastSavedAt: settingsLastSavedAt, lastError: settingsAutosaveError } =
+    useAutosave({
+      enabled: !!hostId,
+      isDirty,
+      watch: settings,
+      delayMs: HOST_AUTOSAVE_DELAY_MS,
+      saveFn: async (next) => {
+        if (!hostId) return;
         await updateHost(hostId, {
-          languages: settings.languages,
-          baseCurrency: settings.baseCurrency,
+          languages: next.languages,
+          baseCurrency: next.baseCurrency,
         });
         await refreshHost();
-        setSavedSettings(settings);
-        toast.success("Settings saved.");
-      } catch {
-        toast.error("Saving failed.");
-      } finally {
-        setSaving(false);
-      }
-    },
-    [hostId, isDirty, settings, refreshHost, toast]
-  );
+        setSavedSettings(next);
+      },
+    });
 
-  const handleCancel = useCallback(() => {
-    setSettings(savedSettings);
-  }, [savedSettings]);
+  useEffect(() => {
+    if (settingsLastSavedAt) {
+      toast.success("Saving successfull");
+    }
+  }, [settingsLastSavedAt, toast]);
+
+  useEffect(() => {
+    if (settingsAutosaveError) {
+      toast.error("Saving failed");
+    }
+  }, [settingsAutosaveError, toast]);
 
   const toggleLanguage = (code: LanguageCode) => {
     setSettings((prev) => {
@@ -146,11 +149,19 @@ export default function Settings() {
             label="Logo"
             previewClass="h-16 w-16 rounded-lg object-contain"
             onUpload={async (file) => {
+              if (!hostId) {
+                toast.error("Host is not loaded yet.");
+                return;
+              }
               await uploadHostLogo(hostId, file);
               await refreshHost();
               toast.success("Logo uploaded.");
             }}
             onRemove={async () => {
+              if (!hostId) {
+                toast.error("Host is not loaded yet.");
+                return;
+              }
               await removeHostLogo(hostId);
               await refreshHost();
               toast.success("Logo removed.");
@@ -165,11 +176,19 @@ export default function Settings() {
             label="Banner"
             previewClass="h-24 w-full max-w-md rounded-lg object-cover"
             onUpload={async (file) => {
+              if (!hostId) {
+                toast.error("Host is not loaded yet.");
+                return;
+              }
               await uploadHostBanner(hostId, file);
               await refreshHost();
               toast.success("Banner uploaded.");
             }}
             onRemove={async () => {
+              if (!hostId) {
+                toast.error("Host is not loaded yet.");
+                return;
+              }
               await removeHostBanner(hostId);
               await refreshHost();
               toast.success("Banner removed.");
@@ -291,24 +310,6 @@ export default function Settings() {
         </div>
       </div>
 
-      <StickyFormFooter
-        dirty={isDirty}
-        left={
-          <Button variant="secondary" onClick={handleCancel}>
-            Cancel
-          </Button>
-        }
-        right={
-          <Button
-            variant="primary"
-            loading={saving}
-            disabled={!isDirty}
-            onClick={handleSave}
-          >
-            Save settings
-          </Button>
-        }
-      />
       <DiscardChangesModal
         open={showModal}
         onCancel={cancelDiscard}

@@ -1,25 +1,42 @@
 ---
-description: Enforce coding standards and working patterns across all files
+description: Maximal always-on execution discipline for all Taurex work. Enforce strict workflow gates, scope control, implementation quality, and completion standards.
 alwaysApply: true
 ---
 
 # Core Standards
 
-## Working Pattern
-1. Read relevant code before editing.
-2. For new features: update specs/requirements docs **before** writing implementation code.
-3. Provide short plan.
-4. Implement.
-5. Summarize what changed.
+## Execution Workflow (Required Sequence)
+1. Read relevant code and constraints before proposing changes.
+2. Clarify ambiguity and confirm scope before implementation.
+3. Provide a short plan before substantive edits.
+4. Implement in small, focused increments.
+5. Verify with relevant checks (tests/lints/manual validation as applicable).
+6. Summarize outcomes, tradeoffs, and residual risks.
 
-## Code Standards
-- TypeScript-first.
-- No silent failures — handle and surface errors.
-- Keep functions and components small and focused.
-- Extract shared logic into services/hooks.
-- Follow existing naming conventions in the codebase.
+## Implementation Discipline
+- TypeScript-first for new code.
+- No silent failures; handle and surface errors explicitly.
+- Keep functions/components focused and readable.
+- Preserve established patterns unless deviation is explicitly justified.
+- Keep business logic in appropriate layers (avoid mixing concerns).
+- Reuse shared services/hooks/types where appropriate.
 
-## Constraints
-- Do not invent features not requested by the user.
-- Prefer small, reviewable changes.
-- Do not modify unrelated code.
+## Scope And Safety Constraints
+- Do not invent features or requirements not requested.
+- Do not modify unrelated files or behavior.
+- Prefer small, reviewable diffs over broad refactors.
+- Avoid hidden behavioral changes; call out impact explicitly.
+- Ask before taking irreversible or high-risk actions.
+
+## Anti-Patterns To Avoid
+- Large refactors without user request.
+- Coupling UI, data access, and domain logic in one place.
+- Ambiguous error handling or swallowed exceptions.
+- Speculative architecture changes without source-of-truth alignment.
+
+## Completion Criteria
+Before declaring work complete, ensure:
+- Requested scope is implemented and nothing unrelated was introduced.
+- Relevant verification has been performed and reported.
+- Constraints and guardrails were respected.
+- Summary includes what changed, why, and any remaining risks.

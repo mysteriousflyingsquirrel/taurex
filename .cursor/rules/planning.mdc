@@ -1,25 +1,31 @@
 ---
-description: Enforce spec format and requirements updates when editing documentation
-globs: docs/**
+description: Apply for planning, scoping, and specification requests. Enforce source-of-truth alignment, concise acceptance criteria, and minimal-scope requirement definitions before implementation.
 ---
 
 # Planning & Specs
 
-## Workflow
-- Reference existing specs as scope source of truth before writing new ones:
+## When This Rule Applies
+- Requests to plan work, define scope, or write/update specifications.
+- Requirement clarification and acceptance-criteria drafting before implementation.
+- Post-change documentation alignment checks.
+
+## Planning Workflow
+- Reference source-of-truth docs before creating or modifying requirements:
   - `docs/specs/` — app specifications and acceptance criteria
   - `docs/architecture.md` — system architecture
   - `docs/data-model.md` — Firestore data model
   - `docs/billing.md` — billing logic
-- Update relevant spec docs when a new feature is specced — no feature ships undocumented.
-- For new features: ask clarifying questions before producing a spec.
-- For refinements: proceed directly.
+- For new features, clarify ambiguity before drafting requirements.
+- For refinements, update existing specs directly with minimal scope.
+- Ensure feature scope and acceptance criteria are documented before implementation.
 
-## Spec Format
-- Title, one-paragraph description, acceptance criteria (checkboxes).
-- Keep scope minimal — flag scope creep.
-- When unsure, suggest the smallest viable version.
+## Specification Output Expectations
+- Include: title, concise description, and explicit acceptance criteria.
+- Keep scope minimal and highlight scope creep or dependency risks.
+- Prefer smallest viable deliverable when uncertainty exists.
+- Call out cross-surface impacts (UI, backend, data model, rules) when relevant.
 
 ## Constraints
-- Do not write implementation code in this context.
-- Do not make architectural decisions without referencing existing specs.
+- Do not write implementation code when the request is planning/spec-only.
+- Do not introduce new architecture decisions without source-of-truth references.
+- Keep requirements testable, concrete, and aligned with existing terminology.

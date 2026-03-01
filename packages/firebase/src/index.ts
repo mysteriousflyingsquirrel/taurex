@@ -28,6 +28,12 @@ export type {
   ApartmentFacts,
   ApartmentLocation,
   BookingLink,
+  ApartmentPromotion,
+  CalendarSyncStatus,
+  ApartmentCalendarImport,
+  ApartmentCalendarManualBlock,
+  ApartmentCalendarBusyRange,
+  ApartmentCalendar,
   Season,
   SeasonDateRange,
   DateString,
@@ -55,6 +61,14 @@ export {
   createApartment,
   updateApartment,
   deleteApartment,
+  buildApartmentCalendarExportUrl,
+  rotateApartmentCalendarExportToken,
+  addApartmentCalendarImport,
+  removeApartmentCalendarImport,
+  setApartmentCalendarImportActive,
+  setApartmentManualBlock,
+  removeApartmentManualBlock,
+  refreshApartmentCalendarImports,
 } from "./services/apartmentService";
 
 export {
@@ -70,4 +84,6 @@ export {
   removeHostLogo,
   removeHostBanner,
   deleteStorageFile,
+  uploadApartmentImage,
+  removeApartmentImage,
 } from "./services/storageService";

@@ -4,7 +4,17 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import "../../lib/firebase";
-import { fetchHostBySlug, fetchApartments, formatMoney, type Host, type Apartment, type CurrencyCode } from "@taurex/firebase";
+import {
+  fetchHostBySlug,
+  fetchApartments,
+  fetchSeasons,
+  formatMoney,
+  formatDate,
+  type Host,
+  type Apartment,
+  type CurrencyCode,
+  type Season,
+} from "@taurex/firebase";
 import HostHeader from "../../components/HostHeader";
 import AvailabilityBar from "../../components/AvailabilityBar";
 import ImageCarousel from "../../components/ImageCarousel";
@@ -19,6 +29,7 @@ export default function HostPage() {
 
   const [host, setHost] = useState<Host | null>(null);
   const [apartments, setApartments] = useState<Apartment[]>([]);
+  const [seasons, setSeasons] = useState<Record<string, Season>>({});
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -36,8 +47,12 @@ export default function HostPage() {
       .then(async (h) => {
         if (!h) { setNotFound(true); setLoading(false); return; }
         setHost(h);
-        const apts = await fetchApartments(h.id);
+        const [apts, seasonMap] = await Promise.all([
+          fetchApartments(h.id),
+          fetchSeasons(h.id),
+        ]);
         setApartments(apts);
+        setSeasons(seasonMap);
         setLoading(false);
       })
       .catch(() => { setNotFound(true); setLoading(false); });
@@ -108,6 +123,37 @@ export default function HostPage() {
 
   const cur = (host.baseCurrency ?? "CHF") as CurrencyCode;
   const hasBanner = !!host.bannerUrl;
+  const pricingDate = checkIn || new Date().toISOString().slice(0, 10);
+
+  const isDateInRange = (date: string, start: string, end: string) =>
+    !!date && !!start && !!end && date >= start && date <= end;
+
+  const getEffectiveNightlyPrice = (apt: Apartment, date: string): number => {
+    for (const season of Object.values(seasons)) {
+      const matches = season.dateRanges?.some((r) => isDateInRange(date, r.start, r.end));
+      if (matches) {
+        const seasonalPrice = apt.prices?.[season.id];
+        if (typeof seasonalPrice === "number" && seasonalPrice > 0) return seasonalPrice;
+      }
+    }
+    return apt.priceDefault;
+  };
+
+  const getPromotionPrice = (apt: Apartment, date: string) => {
+    const basePrice = getEffectiveNightlyPrice(apt, date);
+    const promotion = apt.promotion;
+    const active =
+      !!promotion &&
+      !!promotion.endDate &&
+      date <= promotion.endDate &&
+      promotion.discountPercent >= 1 &&
+      promotion.discountPercent <= 99;
+    if (!active || !promotion) {
+      return { active: false as const, basePrice, discountedPrice: basePrice };
+    }
+    const discountedPrice = Math.round(basePrice * (1 - promotion.discountPercent / 100) * 100) / 100;
+    return { active: true as const, basePrice, discountedPrice, promotion };
+  };
 
   const apartmentGrid = filteredApartments.length === 0 ? (
     <div className="mt-16 text-center">
@@ -118,12 +164,40 @@ export default function HostPage() {
       {filteredApartments.map((apt) => (
         <Link key={apt.id} href={`/${host.slug}/${apt.slug}?${searchParams.toString()}`} className="group overflow-hidden rounded-2xl bg-surface shadow-lg transition hover:-translate-y-1 hover:shadow-2xl">
           <div className="relative">
-            <ImageCarousel images={apt.images ?? []} height="h-56" emptyText={t(lang, "apartment.noImages")} />
-            {apt.priceDefault > 0 && (
-              <div className="absolute right-3 top-3 rounded-lg bg-foreground/80 px-3 py-1.5 text-sm font-semibold text-background backdrop-blur-sm">
-                {formatMoney(apt.priceDefault, cur)} <span className="text-xs font-normal opacity-80">{t(lang, "apartment.perNight")}</span>
-              </div>
-            )}
+            <ImageCarousel images={apt.images ?? []} height="h-56" emptyText={t(lang, "apartment.noImages")} preferThumbnail />
+            {(() => {
+              const promo = getPromotionPrice(apt, pricingDate);
+              if (promo.discountedPrice <= 0) return null;
+              return (
+                <div className="absolute left-3 top-3 rounded-lg bg-foreground/85 px-3 py-2 text-background backdrop-blur-sm">
+                  {promo.active ? (
+                    <div className="space-y-1">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-300">
+                        {promo.promotion.name || t(lang, "apartment.promoActive")}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-background/70 line-through">
+                          {formatMoney(promo.basePrice, cur)}
+                        </span>
+                        <span className="text-sm font-semibold">
+                          {formatMoney(promo.discountedPrice, cur)}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-background/80">
+                        {t(lang, "apartment.promoPeriod", {
+                          start: formatDate(promo.promotion.startDate),
+                          end: formatDate(promo.promotion.endDate),
+                        })}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="text-sm font-semibold">
+                      {formatMoney(promo.basePrice, cur)}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
           <div className="p-5">
             <h3 className="text-lg font-semibold text-foreground group-hover:text-primary">{apt.name}</h3>

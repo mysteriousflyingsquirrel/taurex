@@ -172,7 +172,26 @@ Grid layout: 2 cols mobile, 3 cols desktop.
 
 #### Section C — Images (default: open)
 
-Title shows count: "Images (N)". Future feature — currently shows placeholder text.
+Title shows count: "Images (N)".
+
+- **New mode**: Shows message "Save the apartment first to upload images." (images require a slug to determine the storage path).
+- **Edit mode**: Renders the `ApartmentImageManager` component.
+
+| Aspect | Specification |
+|---|---|
+| **Max images** | 15 per apartment |
+| **Accepted formats** | JPEG, PNG, WebP |
+| **Max file size** | 10 MB per file |
+| **Grid** | 3 cols mobile, 4 cols desktop; each cell 4:3 aspect ratio |
+| **Upload** | Hidden multi-file picker triggered by dashed "Add images" cell (last in grid) |
+| **Client-side resize** | Each file is resized via canvas before upload: thumbnail max 768px wide (WebP), full-res max 1920px wide (WebP) |
+| **Storage paths** | `thumbnails/{hostId}/{slug}/{filename}.webp` (thumb), `images/{hostId}/{slug}/{filename}.webp` (full-res) |
+| **Persistence** | Immediate — each image uploads to Storage, then the apartment document's `images` array is updated. Does not participate in the form dirty/save flow. |
+| **Remove** | X button overlay (top-right, visible on hover) deletes both Storage files and removes the entry from the `images` array. |
+| **Limit enforcement** | "Add images" cell hidden when at 15 images. File picker limited to remaining slots. |
+| **Loading** | Per-image spinner placeholder during upload; spinner in remove button during removal. |
+| **Error display** | Inline below the grid (format/size validation, upload failures). |
+| **Status line** | "{N}/15 images. JPEG, PNG, or WebP, max 10 MB each." |
 
 #### Section D — Amenities (default: open)
 
@@ -208,6 +227,25 @@ Same as before — booking links list and iCal URLs list.
 **Default (nights)**: Number input (min 1), **mandatory**.
 
 **Per-season overrides**: Same pattern as pricing — one field per current-year season.
+
+#### Section I — Promotion (default: collapsed)
+
+Hosts can configure one optional promotion per apartment.
+
+| Field | Type | Rules |
+|---|---|---|
+| Name | Text | Optional display label, e.g. "Winter Deal" |
+| Discount (%) | Number | Required for active promotion, integer 1–99 |
+| Start date | Date | Required for active promotion |
+| End date | Date | Required for active promotion; must be >= start date |
+
+Behaviour:
+- A single `promotion` object is stored on the apartment document (no promotion array).
+- Promotion fields are directly editable in the apartment form (no dedicated Add/Edit promotion actions).
+- In edit mode, promotion changes are local form changes and persist only when clicking `Save apartment`.
+- `Remove promotion` clears the local promotion state; deletion persists on `Save apartment`.
+- Booking visibility rule: once set, promotion is shown immediately and auto-hides when `endDate` is passed (display-only expiry; no automatic document deletion).
+- Validation errors are shown inline and in the form validation summary.
 
 ### 6.3 Validation (on Create)
 
@@ -358,7 +396,8 @@ Apartment Edit Page
   └── createApartment(hostId, apartment)
   └── updateApartment(hostId, slug, data)       ← autosave
   └── fetchSeasons(hostId)
-  └── uploadImage / uploadBigImage                 ← future
+  └── uploadApartmentImage(hostId, slug, file)      ← immediate
+  └── removeApartmentImage(hostId, slug, filename) ← immediate
 
 Seasons Page
   └── fetchSeasons(hostId, year)
@@ -416,12 +455,19 @@ Settings Page
 - [ ] After creation, edits autosave with 1.5s debounce; new apartment requires manual "Create Apartment" (sticky bottom bar).
 - [ ] Section A: Slug auto-slugified and disabled after creation; Name required; Descriptions textarea per host language.
 - [ ] Section B: All fields mandatory (guests ≥ 1, bedrooms, bathrooms, doubleBeds, singleBeds, sqm ≥ 0); grid 2 cols mobile, 3 desktop.
-- [ ] Section C: Images section shows placeholder (deferred).
+- [ ] Section C: In new mode, shows "Save the apartment first to upload images." In edit mode, shows image grid with upload/remove.
+- [ ] Section C: Upload accepts JPEG/PNG/WebP up to 10 MB; client-side resizes to thumbnail (768px) and full-res (1920px) as WebP.
+- [ ] Section C: Uploads save immediately to Storage and update apartment document; do not trigger form dirty state.
+- [ ] Section C: Remove deletes both Storage files and updates apartment document.
+- [ ] Section C: Maximum 15 images enforced; "Add images" cell hidden at limit.
 - [ ] Section D: Amenities per language as chips with remove; Add input + Enter; trim and prevent duplicates.
 - [ ] Section E: Address with Nominatim autocomplete (400ms debounce), lat/lng filled on selection.
 - [ ] Section F: Booking links list and iCal URLs list.
 - [ ] Section G: Default price (mandatory, currency from host); per-season overrides for current-year seasons.
 - [ ] Section H: Default min stay (mandatory, min 1); per-season overrides for current-year seasons.
+- [ ] Section I: Promotion uses single-save flow (no Add/Edit buttons, only Remove promotion action).
+- [ ] Section I: Promotion add/edit/remove persist only via apartment Create/Save actions.
+- [ ] Section I: Promotion validation enforces percent 1–99, start/end required, and start <= end.
 - [ ] Create validation: required slug, name, guests ≥ 1, bedrooms, bathrooms, doubleBeds, singleBeds, sqm > 0, priceDefault > 0, minStayDefault ≥ 1; errors in red card above sections.
 
 ### Seasons

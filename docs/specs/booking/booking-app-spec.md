@@ -120,7 +120,7 @@ White rounded card (`rounded-2xl shadow-lg`) with hover lift.
 | Section | Content |
 |---|---|
 | **Image** | First image from `images[]` array. Aspect ratio 4:3. Fallback grey box if no images. |
-| **Price badge** | Overlaid on image (top-right): "{currency} {priceDefault}/night". Uses `host.baseCurrency`. |
+| **Price badge** | Overlaid on image (top-left): "{currency} {price}" without `/night`. Uses effective nightly price (season override if active, else default). |
 | **Name** | `apartment.name` |
 | **Fact pills** | Rounded badges: Guests, Bedrooms, Bathrooms, m² |
 | **Link** | Entire card is clickable → `/{hostSlug}/{apartmentSlug}` (preserves query params) |
@@ -152,7 +152,7 @@ Carousel component showing apartment images.
 
 | Feature | Details |
 |---|---|
-| **Images** | `images[].src` (thumbnail) |
+| **Images** | `images[].srcBig` (full-res), fallback to `images[].src` (thumbnail). Host app stores up to 15 images per apartment. |
 | **Transition** | Cross-fade (opacity, 500ms) |
 | **Navigation** | Left/right arrow buttons + dot indicators |
 | **Touch** | Swipe left/right |
@@ -165,7 +165,13 @@ Below gallery, full-width linear layout (no sidebar).
 
 **Name**: Large heading (`text-3xl font-bold`).
 
-**Price**: "{currency} {priceDefault} / night" prominently displayed below name.
+**Price**: "{currency} {price}" (no `/night`) prominently displayed below name.
+
+**Promotion display**:
+- If apartment promotion exists and `endDate` is not passed, show struck-through original price + discounted price.
+- Show promotion period (`startDate` to `endDate`) near the image price badge.
+- `startDate` does not gate display on booking pages; promotion is visible immediately once set.
+- Visual style should emphasize savings while keeping contrast/readability on image overlays.
 
 ### 6.5 Facts
 
@@ -226,7 +232,10 @@ Rounded button/link. Variants: `primary` (indigo), `secondary` (grey), `outline`
 
 ### ImageCarousel
 
-Reusable image slider. Props: `images: ApartmentImage[]`, `height?: string`.
+Reusable image slider. Props: `images: ApartmentImage[]`, `height?: string`, `preferThumbnail?: boolean`.
+
+- `preferThumbnail` (default `false`): when `true`, uses `img.src` (768px thumbnail from `thumbnails/...`); when `false`, uses `img.srcBig ?? img.src` (full-res from `images/...` with fallback).
+- Card context passes `preferThumbnail` to avoid loading full-res images at card size.
 
 Features: cross-fade transitions, arrow navigation, dot indicators, touch swipe, lazy loading.
 
@@ -357,7 +366,7 @@ Key behaviours:
 - [ ] Apartment grid is responsive: 1 col mobile, 2 md, 3 lg; gap 24px.
 - [ ] Grid shows only apartments where `facts.guests >= selectedGuests`.
 - [ ] Empty grid shows translated "No apartments available".
-- [ ] Apartment card: first image 4:3, price badge (currency + price/night), name, fact pills (guests, bedrooms, bathrooms, m²); entire card links to `/{hostSlug}/{apartmentSlug}` preserving query params.
+- [ ] Apartment card: image carousel with `preferThumbnail` (loads thumbnails), price badge at top-left (currency + price, no `/night`), name, fact pills (guests, bedrooms, bathrooms, m²); entire card links to `/{hostSlug}/{apartmentSlug}` preserving query params.
 - [ ] Host Not Found shows centred message and link back to taurex.one.
 
 ### Apartment Detail
@@ -365,7 +374,9 @@ Key behaviours:
 - [ ] Min stay uses `fetchSeasons(hostId)`.
 - [ ] Header matches host home (logo + name, no banner on detail page); breadcrumb is Host name → Apartment name.
 - [ ] Image gallery: images from `images[]`, cross-fade 500ms, arrow + dot navigation, touch swipe; heights 320px (mobile), 384px (md), 500px (lg); grey empty state when no images.
-- [ ] Name displayed as large heading; price as "{currency} {priceDefault} / night" below.
+- [ ] Name displayed as large heading; price as "{currency} {price}" without `/night`.
+- [ ] If promotion exists and `endDate` is not passed, original price is struck through, discounted price is highlighted, and promotion period is shown.
+- [ ] Promotion is visible immediately once set (start date does not gate display) and auto-hides after `endDate`.
 - [ ] Facts grid (2→3→4 cols): white rounded cards, no icons — Guests, Bedrooms, Double/Single beds (if >0), Bathrooms, m² (if >0).
 - [ ] Description from `descriptions[lang]` with fallback to `en`; rendered with `whitespace-pre-line`.
 - [ ] Amenities grid (2–4 cols): white rounded cards, no icons; source `amenities[lang]` with fallback to `en`.
@@ -378,7 +389,7 @@ Key behaviours:
 ### Shared Components
 - [ ] **Badge**: rounded pill; variants `default` (grey), `accent` (indigo).
 - [ ] **Button**: rounded; variants `primary` (indigo), `secondary` (grey), `outline` (border).
-- [ ] **ImageCarousel**: props `images`, optional `height`; cross-fade, arrows, dots, touch swipe, lazy loading.
+- [ ] **ImageCarousel**: props `images`, optional `height`, optional `preferThumbnail`; cross-fade, arrows, dots, touch swipe, lazy loading. When `preferThumbnail` is true, uses `src` (thumbnail); otherwise uses `srcBig` with fallback to `src`.
 - [ ] **GuestStepper**: props `value`, `onChange`, `min`, `max`.
 - [ ] **DateRangePicker**: trigger shows `dd.mm.yyyy` range or placeholder; dropdown two months side-by-side with nav arrows; first click check-in, second click check-out; range highlighted; days before today disabled; check-out after check-in; closes on outside click or after selecting check-out.
 - [ ] **ApartmentMap**: props `apartments`, `hostSlug`, `lang`; markers with popups (name + link); auto-fits bounds for apartments with valid lat/lng.

@@ -5,20 +5,33 @@ import {
   createApartment,
   updateApartment,
   fetchSeasons,
+  buildApartmentCalendarExportUrl,
+  rotateApartmentCalendarExportToken,
+  addApartmentCalendarImport,
+  removeApartmentCalendarImport,
+  setApartmentCalendarImportActive,
+  refreshApartmentCalendarImports,
   AVAILABLE_LANGUAGES,
   currencySymbol,
   formatMoney,
+  formatDate,
   type Apartment,
+  type ApartmentPromotion,
+  type ApartmentCalendar,
   type Season,
   type LanguageCode,
 } from "@taurex/firebase";
 import { useHost } from "../contexts/HostContext";
 import AddressAutocomplete from "../components/AddressAutocomplete";
 import Button from "../components/Button";
-import StickyFormFooter from "../components/StickyFormFooter";
 import DiscardChangesModal from "../components/DiscardChangesModal";
 import { useToast } from "../components/Toast";
 import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
+import ApartmentImageManager from "../components/ApartmentImageManager";
+import DateRangePicker from "../components/DateRangePicker";
+import { useAutosave } from "../hooks/useAutosave";
+import { HOST_AUTOSAVE_DELAY_MS } from "../config/autosave";
+import { ENABLE_APARTMENT_CALENDAR_INTEGRATION } from "../config/features";
 
 function slugify(text: string): string {
   return text
@@ -52,6 +65,19 @@ function emptyForm(languages: LanguageCode[]): Omit<Apartment, "id"> {
   };
 }
 
+function validatePromotion(promotion: ApartmentPromotion): string[] {
+  const errs: string[] = [];
+  if (!Number.isInteger(promotion.discountPercent) || promotion.discountPercent < 1 || promotion.discountPercent > 99) {
+    errs.push("Promotion discount must be an integer between 1 and 99.");
+  }
+  if (!promotion.startDate) errs.push("Promotion start date is required.");
+  if (!promotion.endDate) errs.push("Promotion end date is required.");
+  if (promotion.startDate && promotion.endDate && promotion.startDate > promotion.endDate) {
+    errs.push("Promotion start date must be before or equal to end date.");
+  }
+  return errs;
+}
+
 export default function ApartmentEdit() {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -63,7 +89,6 @@ export default function ApartmentEdit() {
   const [seasons, setSeasons] = useState<Record<string, Season>>({});
   const [loading, setLoading] = useState(!isNew);
   const [creating, setCreating] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const toast = useToast();
   const [openSections, setOpenSections] = useState({
@@ -73,17 +98,33 @@ export default function ApartmentEdit() {
     amenities: true,
     location: false,
     booking: false,
+    calendar: false,
     pricing: false,
+    promotion: false,
     minStay: false,
   });
 
   // Amenity input state (per language)
   const [amenityInputs, setAmenityInputs] = useState<Record<string, string>>({});
 
-  // Booking link / ical input
+  // Booking link / calendar import input
   const [newLinkLabel, setNewLinkLabel] = useState("");
   const [newLinkUrl, setNewLinkUrl] = useState("");
-  const [newIcalUrl, setNewIcalUrl] = useState("");
+  const [newCalendarImportName, setNewCalendarImportName] = useState("");
+  const [newCalendarImportUrl, setNewCalendarImportUrl] = useState("");
+  const [refreshingCalendar, setRefreshingCalendar] = useState(false);
+  const [rotatingToken, setRotatingToken] = useState(false);
+
+  const createCalendarDraft = useCallback((): ApartmentCalendar => {
+    const token = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    return {
+      exportToken: token,
+      imports: [],
+      manualBlocks: [],
+      importedBusyRanges: [],
+      lastInternalUpdateAt: new Date().toISOString(),
+    };
+  }, []);
 
   // Load data
   useEffect(() => {
@@ -101,14 +142,19 @@ export default function ApartmentEdit() {
             if (descs[l] === undefined) descs[l] = "";
             if (amens[l] === undefined) amens[l] = [];
           }
-          const data = { ...rest, descriptions: descs, amenities: amens };
+          const data = {
+            ...rest,
+            descriptions: descs,
+            amenities: amens,
+            calendar: rest.calendar ?? createCalendarDraft(),
+          };
           setForm(data);
           setSavedForm(data);
         }
         setLoading(false);
       });
     }
-  }, [hostId, slug, isNew, languages]);
+  }, [hostId, slug, isNew, languages, createCalendarDraft]);
 
   // Sync language additions when settings change
   useEffect(() => {
@@ -144,24 +190,33 @@ export default function ApartmentEdit() {
   const { showModal, confirmDiscard, cancelDiscard, guardedNavigate } =
     useUnsavedChangesGuard(isDirty);
 
-  const handleSaveApartment = useCallback(async () => {
-    if (!hostId || !slug || isNew || !isDirty) return;
-    setSaving(true);
-    try {
-      const { slug: _slug, ...rest } = form;
+  const {
+    lastSavedAt: apartmentLastSavedAt,
+    lastError: apartmentAutosaveError,
+  } = useAutosave({
+    enabled: !!hostId && !!slug && !isNew,
+    isDirty,
+    watch: form,
+    delayMs: HOST_AUTOSAVE_DELAY_MS,
+    saveFn: async (next) => {
+      if (!hostId || !slug || isNew) return;
+      const { slug: _slug, ...rest } = next;
       await updateApartment(hostId, slug, rest);
-      setSavedForm(form);
-      toast.success("Apartment saved.");
-    } catch {
-      toast.error("Saving failed.");
-    } finally {
-      setSaving(false);
-    }
-  }, [hostId, slug, isNew, isDirty, form, toast]);
+      setSavedForm(next);
+    },
+  });
 
-  const handleCancelEdit = useCallback(() => {
-    if (savedForm) setForm(savedForm);
-  }, [savedForm]);
+  useEffect(() => {
+    if (!isNew && apartmentLastSavedAt) {
+      toast.success("Saving successfull");
+    }
+  }, [apartmentLastSavedAt, isNew, toast]);
+
+  useEffect(() => {
+    if (!isNew && apartmentAutosaveError) {
+      toast.error("Saving failed");
+    }
+  }, [apartmentAutosaveError, isNew, toast]);
 
   // Validate mandatory fields
   const validate = (): string[] => {
@@ -176,6 +231,9 @@ export default function ApartmentEdit() {
     if (form.facts.sqm === undefined || form.facts.sqm <= 0) errs.push("Size (m²) is required.");
     if (!form.priceDefault || form.priceDefault <= 0) errs.push("Default price is required.");
     if (!form.minStayDefault || form.minStayDefault < 1) errs.push("Default minimum stay is required.");
+    if (form.promotion && (form.promotion.isActive ?? true)) {
+      errs.push(...validatePromotion(form.promotion));
+    }
     return errs;
   };
 
@@ -199,6 +257,96 @@ export default function ApartmentEdit() {
     }
   };
 
+  const updatePromotionField = (patch: Partial<ApartmentPromotion>) => {
+    const current: ApartmentPromotion = form.promotion ?? {
+      name: "",
+      discountPercent: 0,
+      startDate: "",
+      endDate: "",
+      isActive: true,
+    };
+    update("promotion", { ...current, ...patch, isActive: true });
+  };
+
+  const handleResetPromotion = () => {
+    update("promotion", {
+      name: "",
+      discountPercent: 0,
+      startDate: "",
+      endDate: "",
+      isActive: false,
+    });
+  };
+
+  const updateCalendar = useCallback(
+    (calendar: ApartmentCalendar) => {
+      update("calendar", {
+        ...calendar,
+        lastInternalUpdateAt: new Date().toISOString(),
+      });
+    },
+    [update]
+  );
+
+  const handleAddCalendarImport = () => {
+    const name = newCalendarImportName.trim();
+    const url = newCalendarImportUrl.trim();
+    if (!name || !url) return;
+    const draft = form.calendar ?? createCalendarDraft();
+    updateCalendar({
+      ...draft,
+      imports: [
+        ...draft.imports,
+        {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          name,
+          url,
+          isActive: true,
+          lastStatus: "pending",
+        },
+      ],
+    });
+    setNewCalendarImportName("");
+    setNewCalendarImportUrl("");
+  };
+
+  const handleRefreshCalendarImports = async () => {
+    if (!hostId || !slug || isNew) return;
+    setRefreshingCalendar(true);
+    try {
+      await refreshApartmentCalendarImports(hostId, slug);
+      const apt = await fetchApartmentBySlug(hostId, slug);
+      if (apt) {
+        const { id: _, ...rest } = apt;
+        setForm(rest);
+        setSavedForm(rest);
+      }
+      toast.success("Imports refreshed.");
+    } catch {
+      toast.error("Refresh failed.");
+    } finally {
+      setRefreshingCalendar(false);
+    }
+  };
+
+  const handleRotateExportToken = async () => {
+    if (!hostId || !slug || isNew) return;
+    setRotatingToken(true);
+    try {
+      const token = await rotateApartmentCalendarExportToken(hostId, slug);
+      const draft = form.calendar ?? createCalendarDraft();
+      updateCalendar({
+        ...draft,
+        exportToken: token,
+      });
+      toast.success("Export token rotated.");
+    } catch {
+      toast.error("Token rotation failed.");
+    } finally {
+      setRotatingToken(false);
+    }
+  };
+
   const handleBack = () => {
     guardedNavigate("/apartments");
   };
@@ -214,9 +362,20 @@ export default function ApartmentEdit() {
   // Unique season list (deduplicate across years — use latest year per name)
   const currentYear = new Date().getFullYear();
   const yearSeasons = Object.values(seasons).filter((s) => s.year === currentYear);
+  const promotionErrors =
+    form.promotion && (form.promotion.isActive ?? true)
+      ? validatePromotion(form.promotion)
+      : [];
+  const today = new Date().toISOString().slice(0, 10);
+  const promotionIsExpired = !!form.promotion?.endDate && form.promotion.endDate < today;
+  const promotionStatus = !form.promotion || form.promotion.isActive === false
+    ? { label: "Inactive", className: "bg-surface-alt text-muted" }
+    : promotionIsExpired
+      ? { label: "Expired", className: "bg-warning-bg text-warning" }
+      : { label: "Active", className: "bg-success-bg text-success" };
 
   return (
-    <div className="pb-24">
+    <div className="pb-8">
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -227,6 +386,11 @@ export default function ApartmentEdit() {
             {isNew ? "New Apartment" : `Edit: ${form.name || form.slug}`}
           </h1>
         </div>
+        {isNew && (
+          <Button variant="primary" loading={creating} onClick={handleCreate}>
+            Create apartment
+          </Button>
+        )}
       </div>
 
       {/* Validation errors */}
@@ -344,16 +508,26 @@ export default function ApartmentEdit() {
           </div>
         </SectionCard>
 
-        {/* Section C — Images (placeholder) */}
+        {/* Section C — Images */}
         <SectionCard
           title={`Images (${form.images.length})`}
           open={openSections.images}
           onToggle={() => toggleSection("images")}
         >
-          <p className="text-sm text-muted">
-            Image upload will be available in a future update. Images can be
-            managed directly in Firebase Storage.
-          </p>
+          {isNew ? (
+            <p className="text-sm text-muted">
+              Save the apartment first to upload images.
+            </p>
+          ) : (
+            <ApartmentImageManager
+              hostId={hostId!}
+              slug={slug!}
+              images={form.images}
+              onImagesChange={(imgs) => {
+                setForm((f) => ({ ...f, images: imgs }));
+              }}
+            />
+          )}
         </SectionCard>
 
         {/* Section D — Amenities per language */}
@@ -420,7 +594,7 @@ export default function ApartmentEdit() {
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div>
+              <div className="sm:col-span-2">
                 <label className="block text-sm font-medium text-foreground">
                   Latitude
                 </label>
@@ -458,161 +632,162 @@ export default function ApartmentEdit() {
           </div>
         </SectionCard>
 
-        {/* Section F — Booking & Availability */}
+        {/* Section F — Booking Links */}
         <SectionCard
-          title="Booking & Availability"
+          title="Booking Links"
           open={openSections.booking}
           onToggle={() => toggleSection("booking")}
         >
-          {/* Booking Links */}
-          <div>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-foreground">Booking Links</p>
-              <button
-                onClick={() => {
-                  if (!newLinkLabel.trim() && !newLinkUrl.trim()) return;
-                  update("bookingLinks", [
-                    ...form.bookingLinks,
-                    {
-                      label: newLinkLabel.trim() || "Link",
-                      url: newLinkUrl.trim(),
-                    },
-                  ]);
-                  setNewLinkLabel("");
-                  setNewLinkUrl("");
-                }}
-                className="inline-flex h-9 items-center rounded-lg border border-input bg-surface px-3 text-sm font-semibold text-foreground hover:bg-surface-alt"
-              >
-                + Add Link
-              </button>
-            </div>
-            {form.bookingLinks.length === 0 ? (
-              <p className="mt-2 text-sm text-muted">
-                No booking links yet.
-              </p>
-            ) : (
-              <div className="mt-2 space-y-2">
-                {form.bookingLinks.map((link, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={link.label}
-                      onChange={(e) => {
-                        const next = [...form.bookingLinks];
-                        next[i] = { ...next[i], label: e.target.value };
-                        update("bookingLinks", next);
-                      }}
-                      placeholder="Label"
-                      className="w-40 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
-                    />
-                    <input
-                      type="text"
-                      value={link.url}
-                      onChange={(e) => {
-                        const next = [...form.bookingLinks];
-                        next[i] = { ...next[i], url: e.target.value };
-                        update("bookingLinks", next);
-                      }}
-                      placeholder="https://..."
-                      className="flex-1 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
-                    />
-                    <button
+          {form.bookingLinks.length === 0 ? (
+            <p className="text-sm text-muted">No booking links yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {form.bookingLinks.map((link, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={link.label}
+                    onChange={(e) => {
+                      const next = [...form.bookingLinks];
+                      next[i] = { ...next[i], label: e.target.value };
+                      update("bookingLinks", next);
+                    }}
+                    placeholder="Label"
+                    className="w-40 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    value={link.url}
+                    onChange={(e) => {
+                      const next = [...form.bookingLinks];
+                      next[i] = { ...next[i], url: e.target.value };
+                      update("bookingLinks", next);
+                    }}
+                    placeholder="https://..."
+                    className="flex-1 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
+                  />
+                  <div className="ml-auto">
+                    <Button
+                      variant="destructive"
+                      size="sm"
                       onClick={() =>
                         update(
                           "bookingLinks",
                           form.bookingLinks.filter((_, j) => j !== i)
                         )
                       }
-                      className="text-destructive hover:text-destructive"
                     >
-                      ×
-                    </button>
+                      Delete
+                    </Button>
                   </div>
-                ))}
-              </div>
-            )}
-            <div className="mt-2 flex items-center gap-2">
-              <input
-                type="text"
-                value={newLinkLabel}
-                onChange={(e) => setNewLinkLabel(e.target.value)}
-                placeholder="Label"
-                className="w-40 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
-              />
-              <input
-                type="text"
-                value={newLinkUrl}
-                onChange={(e) => setNewLinkUrl(e.target.value)}
-                placeholder="https://..."
-                className="flex-1 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
-              />
+                </div>
+              ))}
             </div>
+          )}
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              type="text"
+              value={newLinkLabel}
+              onChange={(e) => setNewLinkLabel(e.target.value)}
+              placeholder="Label"
+              className="w-40 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
+            />
+            <input
+              type="text"
+              value={newLinkUrl}
+              onChange={(e) => setNewLinkUrl(e.target.value)}
+              placeholder="https://..."
+              className="flex-1 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                if (!newLinkLabel.trim() && !newLinkUrl.trim()) return;
+                update("bookingLinks", [
+                  ...form.bookingLinks,
+                  {
+                    label: newLinkLabel.trim() || "Link",
+                    url: newLinkUrl.trim(),
+                  },
+                ]);
+                setNewLinkLabel("");
+                setNewLinkUrl("");
+              }}
+            >
+              + Add link
+            </Button>
           </div>
+        </SectionCard>
 
-          {/* iCal URLs */}
-          <div className="mt-6">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-foreground">iCal URLs</p>
-              <button
-                onClick={() => {
-                  if (!newIcalUrl.trim()) return;
-                  update("icalUrls", [...form.icalUrls, newIcalUrl.trim()]);
-                  setNewIcalUrl("");
-                }}
-                className="inline-flex h-9 items-center rounded-lg border border-input bg-surface px-3 text-sm font-semibold text-foreground hover:bg-surface-alt"
-              >
-                + Add URL
-              </button>
-            </div>
-            {form.icalUrls.length === 0 ? (
-              <p className="mt-2 text-sm text-muted">No iCal URLs yet.</p>
-            ) : (
-              <div className="mt-2 space-y-2">
-                {form.icalUrls.map((url, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={url}
-                      onChange={(e) => {
-                        const next = [...form.icalUrls];
-                        next[i] = e.target.value;
-                        update("icalUrls", next);
-                      }}
-                      placeholder="https://..."
-                      className="flex-1 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
-                    />
-                    <button
+        {/* Section G — Calendar integration (iCal) */}
+        <SectionCard
+          title="Calendar integration (iCal)"
+          open={openSections.calendar}
+          onToggle={() => toggleSection("calendar")}
+        >
+          {form.icalUrls.length === 0 ? (
+            <p className="text-sm text-muted">No imports yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {form.icalUrls.map((url, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={url}
+                    onChange={(e) => {
+                      const next = [...form.icalUrls];
+                      next[i] = e.target.value;
+                      update("icalUrls", next);
+                    }}
+                    placeholder="https://..."
+                    className="flex-1 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
+                  />
+                  <div className="ml-auto">
+                    <Button
+                      variant="destructive"
+                      size="sm"
                       onClick={() =>
                         update(
                           "icalUrls",
                           form.icalUrls.filter((_, j) => j !== i)
                         )
                       }
-                      className="text-destructive hover:text-destructive"
                     >
-                      ×
-                    </button>
+                      Delete
+                    </Button>
                   </div>
-                ))}
-              </div>
-            )}
-            <div className="mt-2">
-              <input
-                type="text"
-                value={newIcalUrl}
-                onChange={(e) => setNewIcalUrl(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    if (!newIcalUrl.trim()) return;
-                    update("icalUrls", [...form.icalUrls, newIcalUrl.trim()]);
-                    setNewIcalUrl("");
-                  }
-                }}
-                placeholder="https://..."
-                className="block w-full rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
-              />
+                </div>
+              ))}
             </div>
+          )}
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              type="text"
+              value={newIcalUrl}
+              onChange={(e) => setNewIcalUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (!newIcalUrl.trim()) return;
+                  update("icalUrls", [...form.icalUrls, newIcalUrl.trim()]);
+                  setNewIcalUrl("");
+                }
+              }}
+              placeholder="https://..."
+              className="flex-1 rounded-lg border border-input px-3 py-1.5 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                if (!newIcalUrl.trim()) return;
+                update("icalUrls", [...form.icalUrls, newIcalUrl.trim()]);
+                setNewIcalUrl("");
+              }}
+            >
+              + Add import
+            </Button>
           </div>
         </SectionCard>
 
@@ -689,7 +864,97 @@ export default function ApartmentEdit() {
           )}
         </SectionCard>
 
-        {/* Section H — Minimum Stay */}
+        {/* Section H — Promotion */}
+        <SectionCard
+          title="Promotion"
+          open={openSections.promotion}
+          onToggle={() => toggleSection("promotion")}
+        >
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span
+                className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${promotionStatus.className}`}
+              >
+                {promotionStatus.label}
+              </span>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleResetPromotion}
+                disabled={!form.promotion}
+              >
+                Reset Promotion
+              </Button>
+            </div>
+            <p className="text-xs text-muted">
+              Promotion changes are saved automatically after {HOST_AUTOSAVE_DELAY_MS / 1000}s of inactivity.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-foreground">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  value={form.promotion?.name ?? ""}
+                  onChange={(e) => updatePromotionField({ name: e.target.value })}
+                  placeholder="e.g. Winter Deal"
+                  className="mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground">
+                  Discount (%) *
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={99}
+                  value={
+                    form.promotion?.discountPercent
+                      ? String(form.promotion.discountPercent)
+                      : ""
+                  }
+                  onChange={(e) =>
+                    updatePromotionField({
+                      discountPercent: e.target.value ? Number(e.target.value) : 0,
+                    })
+                  }
+                  placeholder="e.g. 20"
+                  className="mt-1 block w-full rounded-lg border border-input px-3 py-2 text-sm focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground">
+                  Date range *
+                </label>
+                <div className="mt-1">
+                  <DateRangePicker
+                    checkIn={form.promotion?.startDate ?? ""}
+                    checkOut={form.promotion?.endDate ?? ""}
+                    onCheckInChange={(value) =>
+                      updatePromotionField({ startDate: value })
+                    }
+                    onCheckOutChange={(value) =>
+                      updatePromotionField({ endDate: value })
+                    }
+                    placeholderFrom="Select start date"
+                    placeholderTo="Select end date"
+                  />
+                </div>
+              </div>
+            </div>
+            {promotionErrors.length > 0 && (
+              <ul className="list-inside list-disc text-sm text-destructive">
+                {promotionErrors.map((err, idx) => (
+                  <li key={idx}>{err}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </SectionCard>
+
+        {/* Section I — Minimum Stay */}
         <SectionCard
           title="Minimum Stay"
           open={openSections.minStay}
@@ -766,37 +1031,6 @@ export default function ApartmentEdit() {
         </SectionCard>
       </div>
 
-      <StickyFormFooter
-        dirty={isDirty}
-        left={
-          <Button
-            variant="secondary"
-            onClick={isNew ? handleBack : handleCancelEdit}
-          >
-            Cancel
-          </Button>
-        }
-        right={
-          isNew ? (
-            <Button
-              variant="primary"
-              loading={creating}
-              onClick={handleCreate}
-            >
-              Create apartment
-            </Button>
-          ) : (
-            <Button
-              variant="primary"
-              loading={saving}
-              disabled={!isDirty}
-              onClick={handleSaveApartment}
-            >
-              Save apartment
-            </Button>
-          )
-        }
-      />
       <DiscardChangesModal
         open={showModal}
         onCancel={cancelDiscard}

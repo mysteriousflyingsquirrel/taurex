@@ -64,6 +64,11 @@ Firestore Root
 │       │       ├── priceDefault: number
 │       │       ├── prices: map                  # (optional) Per-season price overrides
 │       │       │   └── {seasonId}: number
+│       │       ├── promotion: map               # (optional) One promotion per apartment
+│       │       │   ├── name: string             # e.g. "Winter Deal"
+│       │       │   ├── discountPercent: number  # 1..99
+│       │       │   ├── startDate: string        # "YYYY-MM-DD"
+│       │       │   └── endDate: string          # "YYYY-MM-DD"
 │       │       ├── minStayDefault: number
 │       │       └── minStay: map                 # (optional) Per-season overrides
 │       │           └── {seasonId}: number
@@ -97,16 +102,16 @@ Firebase Storage Root
 │       ├── logo.{ext}                           # Host logo (max 512×512px, max 500 KB)
 │       └── banner.{ext}                         # Host banner (max 1920×600px, max 2 MB)
 │
-├── images/                                      # Thumbnails (~768px wide)
+├── thumbnails/                                  # Thumbnails (~768px wide)
 │   └── {hostId}/
 │       └── {apartment-slug}/
-│           ├── {filename}.jpg
+│           ├── {filename}.webp
 │           └── ...
 │
-└── images_big/                                  # Full-resolution images
+└── images/                                      # Full-resolution images (capped width)
     └── {hostId}/
         └── {apartment-slug}/
-            ├── {filename}.jpg
+            ├── {filename}.webp
             └── ...
 ```
 
@@ -130,6 +135,9 @@ Firebase Storage Root
 | **Descriptions & amenities** | Keyed by language code. Only languages from host's `languages` array are shown in the UI. |
 | **Autosave** | All edit pages use debounced autosave (1.5–2s). New apartment creation still requires manual "Create" action. |
 | **Images stored as URLs** | `images[].src` and `images[].srcBig` contain full Firebase Storage download URLs. |
+| **Apartment image limit** | Maximum 15 images per apartment (host app enforces this in upload UI). |
+| **Promotion cardinality** | At most one promotion object per apartment (`promotion` field), no promotion array. |
+| **Promotion validation** | `discountPercent` must be 1..99; `startDate` and `endDate` are required when promotion exists; `startDate <= endDate`. |
 | **Branding images** | `logoUrl` and `bannerUrl` on the host document contain full Firebase Storage download URLs. Uploaded via `branding/{hostId}/` storage path. Logo max 512×512px / 500 KB. Banner max 1920×600px / 2 MB. |
 | **Address normalization** | Location addresses are normalized via Nominatim to "Street Nr, ZIP City" format. |
 
@@ -219,6 +227,12 @@ type Apartment = {
   icalUrls: string[]
   priceDefault: number
   prices?: Record<string, number>
+  promotion?: {
+    name: string
+    discountPercent: number
+    startDate: string
+    endDate: string
+  }
   minStayDefault: number
   minStay?: Record<string, number>
 }

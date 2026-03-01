@@ -8,11 +8,13 @@ import {
   fetchHostBySlug,
   fetchApartmentBySlug,
   fetchApartments,
+  fetchSeasons,
   formatMoney,
   formatDate,
   type Host,
   type Apartment,
   type CurrencyCode,
+  type Season,
 } from "@taurex/firebase";
 import HostHeader from "../../../components/HostHeader";
 import ImageCarousel from "../../../components/ImageCarousel";
@@ -26,6 +28,7 @@ export default function ApartmentPage() {
   const [host, setHost] = useState<Host | null>(null);
   const [apartment, setApartment] = useState<Apartment | null>(null);
   const [otherApartments, setOtherApartments] = useState<Apartment[]>([]);
+  const [seasons, setSeasons] = useState<Record<string, Season>>({});
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState<"host" | "apartment" | null>(null);
 
@@ -42,13 +45,15 @@ export default function ApartmentPage() {
       .then(async (h) => {
         if (!h) { setNotFound("host"); setLoading(false); return; }
         setHost(h);
-        const [apt, allApts] = await Promise.all([
+        const [apt, allApts, seasonMap] = await Promise.all([
           fetchApartmentBySlug(h.id, apartmentSlug),
           fetchApartments(h.id),
+          fetchSeasons(h.id),
         ]);
         if (!apt) { setNotFound("apartment"); setLoading(false); return; }
         setApartment(apt);
         setOtherApartments(allApts.filter((a) => a.slug !== apartmentSlug));
+        setSeasons(seasonMap);
         setLoading(false);
       })
       .catch(() => { setNotFound("host"); setLoading(false); });
@@ -100,7 +105,39 @@ export default function ApartmentPage() {
   const description = apartment.descriptions?.[lang] ?? apartment.descriptions?.en ?? "";
   const amenities = apartment.amenities?.[lang] ?? apartment.amenities?.en ?? [];
   const minStay = apartment.minStayDefault ?? 1;
+  const pricingDate = checkIn || new Date().toISOString().slice(0, 10);
   const nightsCount = hasDates ? Math.max(0, Math.round((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / 86400000)) : 0;
+
+  const isDateInRange = (date: string, start: string, end: string) =>
+    !!date && !!start && !!end && date >= start && date <= end;
+
+  const getEffectiveNightlyPrice = (apt: Apartment, date: string): number => {
+    for (const season of Object.values(seasons)) {
+      const matches = season.dateRanges?.some((r) => isDateInRange(date, r.start, r.end));
+      if (matches) {
+        const seasonalPrice = apt.prices?.[season.id];
+        if (typeof seasonalPrice === "number" && seasonalPrice > 0) return seasonalPrice;
+      }
+    }
+    return apt.priceDefault;
+  };
+
+  const getPromotionPrice = (apt: Apartment, date: string) => {
+    const basePrice = getEffectiveNightlyPrice(apt, date);
+    const promotion = apt.promotion;
+    const active =
+      !!promotion &&
+      !!promotion.endDate &&
+      date <= promotion.endDate &&
+      promotion.discountPercent >= 1 &&
+      promotion.discountPercent <= 99;
+    if (!active || !promotion) {
+      return { active: false as const, basePrice, discountedPrice: basePrice };
+    }
+    const discountedPrice = Math.round(basePrice * (1 - promotion.discountPercent / 100) * 100) / 100;
+    return { active: true as const, basePrice, discountedPrice, promotion };
+  };
+  const promo = getPromotionPrice(apartment, pricingDate);
 
   const facts: { label: string; value: string | number }[] = [];
   if (apartment.facts) {
@@ -129,10 +166,31 @@ export default function ApartmentPage() {
         )}
         <div className="relative mt-6">
           <ImageCarousel images={apartment.images ?? []} height="h-64 md:h-80 lg:h-[500px]" emptyText={t(lang, "apartment.noImages")} />
-          {apartment.priceDefault > 0 && (
+          {promo.discountedPrice > 0 && (
             <div className="absolute left-4 top-4 z-10 rounded-lg bg-primary px-4 py-2 text-primary-fg shadow-lg">
-              <span className="text-lg font-bold">{formatMoney(apartment.priceDefault, cur)}</span>
-              <span className="ml-1 text-sm font-normal opacity-80">{t(lang, "apartment.perNight")}</span>
+              {promo.active ? (
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary-fg/85">
+                    {promo.promotion.name || t(lang, "apartment.promoActive")}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm opacity-75 line-through">
+                      {formatMoney(promo.basePrice, cur)}
+                    </span>
+                    <span className="text-lg font-bold">
+                      {formatMoney(promo.discountedPrice, cur)}
+                    </span>
+                  </div>
+                  <p className="text-xs opacity-85">
+                    {t(lang, "apartment.promoPeriod", {
+                      start: formatDate(promo.promotion.startDate),
+                      end: formatDate(promo.promotion.endDate),
+                    })}
+                  </p>
+                </div>
+              ) : (
+                <span className="text-lg font-bold">{formatMoney(promo.basePrice, cur)}</span>
+              )}
             </div>
           )}
         </div>
@@ -188,9 +246,9 @@ export default function ApartmentPage() {
               ) : (
                 <div className="rounded-lg bg-surface-alt px-4 py-3"><p className="text-sm italic text-muted">{t(lang, "apartment.selectDatesFirst")}</p></div>
               )}
-              {hasDates && nightsCount > 0 && apartment.priceDefault > 0 && (
+              {hasDates && nightsCount > 0 && promo.discountedPrice > 0 && (
                 <div className="mt-4 rounded-lg bg-surface-alt px-4 py-3">
-                  <p className="text-lg font-semibold text-foreground">{t(lang, "apartment.approxTotal", { total: formatMoney(nightsCount * apartment.priceDefault, cur) })}</p>
+                  <p className="text-lg font-semibold text-foreground">{t(lang, "apartment.approxTotal", { total: formatMoney(nightsCount * promo.discountedPrice, cur) })}</p>
                   <p className="mt-1 text-xs text-muted">{t(lang, "apartment.approxDisclaimer")}</p>
                 </div>
               )}

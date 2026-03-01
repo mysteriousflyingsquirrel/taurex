@@ -1,24 +1,28 @@
 ---
-description: Validate implementation against specs when reviewing source code
-globs: apps/**,packages/**
+description: Apply for review, audit, validation, and PR-feedback requests. Use findings-first analysis with concise impact summary, open questions, and residual risk/test-gap callouts.
 ---
 
 # Code Review
 
-## Requirements
-- Validate code against acceptance criteria in `docs/specs/`.
-- Check for unhandled errors, missing loading states, and security gaps.
-- Verify no regressions to existing functionality.
-- Check multi-tenant isolation — host data must never leak to other hosts.
-- Validate UI against `docs/ui/ui-constitution.md`.
+## When This Rule Applies
+- Review, audit, validation, and PR-feedback requests.
+- Post-change quality checks where evidence is required.
 
-## Report Format
-When validating, produce:
-- Status: PASS / FAIL / PARTIAL
-- Failures with spec reference
-- Regressions
-- Missing requirements
+## Review Priorities
+- Correctness issues and behavioral regressions.
+- Security concerns and multi-tenant isolation risks.
+- Missing loading, error, and edge-state handling.
+- Alignment with documented acceptance criteria in `docs/specs/`.
+- UI alignment with `docs/ui/ui-constitution.md` when applicable.
 
-## Constraints
-- When reviewing: report issues, do not fix them unless asked.
-- Validate against documented specs, not assumptions.
+## Balanced Report Format
+When reviewing, produce:
+- Findings first, ordered by severity (critical/high/medium/low where relevant).
+- Concise impact summary after findings.
+- Open questions or assumptions that affect confidence.
+- Residual risks and explicit test gaps.
+
+## Reviewer Constraints
+- Report issues first; do not implement fixes unless explicitly asked.
+- Validate against documented specs and observable evidence, not assumptions.
+- Keep review scope focused on requested surfaces and likely blast radius.
